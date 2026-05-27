@@ -1,12 +1,15 @@
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:crownpass/core/ai/bot_engine.dart';
 import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/data/models/game_session_model.dart';
 import 'package:crownpass/data/models/game_action_model.dart';
 import 'package:crownpass/data/models/round_result_model.dart';
 import 'package:crownpass/data/models/player_snapshot_model.dart';
 import 'package:crownpass/core/utils/game_rule_utils.dart';
+import 'package:crownpass/core/utils/domino_engine.dart';
+import 'package:crownpass/data/models/domino_tile_model.dart';
 import 'package:crownpass/core/constants/app_constants.dart';
 import 'game_table_event.dart';
 import 'game_table_state.dart';
@@ -35,6 +38,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
     on<ResetGame>(_onResetGame);
     on<ClearMessage>(_onClearMessage);
     on<CancelRoundSettlement>(_onCancelRoundSettlement);
+    on<PlayDominoTile>(_onPlayDominoTile);
   }
 
   // ── HydratedBloc serialization ───────────────────────────────────────────────
@@ -61,7 +65,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
 
   void _onInitializeGame(InitializeGame event, Emitter<GameTableState> emit) {
     final stock = GameRuleUtils.createInitialStock(event.totalStones);
-    final session = GameSessionModel(
+    GameSessionModel session = GameSessionModel(
       players: event.players,
       currentRoundNumber: 1,
       phase: GamePhase.initialDraw,
@@ -70,13 +74,21 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       actionLog: const [],
       roundHistory: const [],
       totalStonesConfig: event.totalStones,
+      isVsMode: event.isVsMode,
+      botPlayerIds: event.botPlayerIds,
     );
+
+    if (event.isVsMode) {
+      session = _initializeDominoSession(session);
+    }
+
     emit(state.copyWith(
       session: session,
       isDragEnabled: event.isDragEnabled,
       isHapticEnabled: event.isHapticEnabled,
       isSelectingPassCauser: false,
     ));
+    _scheduleBotTurn();
   }
 
   // ── StartRound ───────────────────────────────────────────────────────────────
@@ -93,23 +105,28 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
             ))
         .toList();
 
-    final startPlayerId = session.crownPlayerId ?? session.players.first.id;
+    GameSessionModel newSession = session.copyWith(
+      players: resetPlayers,
+      phase: GamePhase.initialDraw,
+      stockStones: stock,
+      currentTurnPlayerId: resetPlayers.first.id,
+      clearDistributor: true,
+      clearPendingPassed: true,
+      clearSelectedStone: true,
+      clearSettlementPreview: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    if (session.isVsMode) {
+      newSession = _initializeDominoSession(newSession);
+    }
 
     emit(state.copyWith(
-      session: session.copyWith(
-        players: resetPlayers,
-        phase: GamePhase.initialDraw,
-        stockStones: stock,
-        currentTurnPlayerId: startPlayerId,
-        clearDistributor: true,
-        clearPendingPassed: true,
-        clearSelectedStone: true,
-        clearSettlementPreview: true,
-        clearError: true,
-        clearSuccess: true,
-      ),
+      session: newSession,
       isSelectingPassCauser: false,
     ));
+    _scheduleBotTurn();
   }
 
   // ── SelectCurrentPlayer ──────────────────────────────────────────────────────
@@ -123,6 +140,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         clearSuccess: true,
       ),
     ));
+    _scheduleBotTurn();
   }
 
   // ── PlayerPass ───────────────────────────────────────────────────────────────
@@ -131,6 +149,55 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
     final session = state.session;
     final players = session.players;
     final player = GameRuleUtils.getPlayerById(players, event.playerId);
+
+    final hand = session.playerHands[event.playerId] ?? const [];
+    final hasMoves = DominoEngine.hasValidMoves(hand, session.dominoChain);
+    if (hasMoves) {
+      emit(state.copyWith(
+        session: session.copyWith(
+          errorMessage: 'Pemain memiliki kartu yang bisa dimainkan! Tidak boleh pass.',
+          clearSuccess: true,
+        ),
+      ));
+      return;
+    }
+
+    final newConsecutivePassCount = session.isVsMode ? session.consecutivePassCount + 1 : 0;
+
+    // Check if game is blocked (everyone passes in a row in VS Mode)
+    if (session.isVsMode && newConsecutivePassCount == 4) {
+      // Find winner based on lowest pip total of remaining dominoes in hand
+      String winnerId = players.first.id;
+      int minPips = 999999;
+      for (final p in players) {
+        final hand = session.playerHands[p.id] ?? const [];
+        final pips = hand.fold<int>(0, (sum, tile) => sum + tile.totalPips);
+        if (pips < minPips) {
+          minPips = pips;
+          winnerId = p.id;
+        }
+      }
+
+      final winner = GameRuleUtils.getPlayerById(players, winnerId);
+      final preview = GameRuleUtils.createSettlementPreview(
+        players: players,
+        winnerPlayerId: winnerId,
+        currentCrownPlayerId: session.crownPlayerId,
+        isStockEmpty: session.stockStones.isEmpty,
+      );
+
+      emit(state.copyWith(
+        session: session.copyWith(
+          phase: GamePhase.roundSettlement,
+          settlementPreview: preview,
+          consecutivePassCount: newConsecutivePassCount,
+          successMessage: 'Game Buntu! Semua pemain pass. ${winner.name} menang ronde dengan sisa kartu terkecil ($minPips pip)!',
+          clearError: true,
+        ),
+        isSelectingPassCauser: false,
+      ));
+      return;
+    }
 
     if (!GameRuleUtils.isStockEmpty(session.stockStones)) {
       // Phase 1: Draw from stock
@@ -175,6 +242,11 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         createdAt: DateTime.now(),
       );
 
+      // VS mode: auto-advance to next player in turn order
+      final String? nextTurnId = session.isVsMode
+          ? _nextPlayerIdAfter(event.playerId, updatedPlayers)
+          : null;
+
       emit(state.copyWith(
         session: session.copyWith(
           players: updatedPlayers,
@@ -183,8 +255,11 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
           successMessage: finalMessage,
           clearError: true,
           actionLog: [...session.actionLog, action],
+          currentTurnPlayerId: nextTurnId,
+          consecutivePassCount: newConsecutivePassCount,
         ),
       ));
+      _scheduleBotTurn();
     } else {
       // Phase 2: Stock empty → need to select causer
       emit(state.copyWith(
@@ -193,9 +268,11 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
           pendingPassedPlayerId: event.playerId,
           clearError: true,
           clearSuccess: true,
+          consecutivePassCount: newConsecutivePassCount,
         ),
         isSelectingPassCauser: true,
       ));
+      _scheduleBotTurn();
     }
   }
 
@@ -226,6 +303,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       ),
       isSelectingPassCauser: false,
     ));
+    _scheduleBotTurn();
   }
 
   void _onDismissPassCauserSelection(
@@ -404,6 +482,14 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       createdAt: DateTime.now(),
     );
 
+    // VS mode: auto-advance turn to player after the passer
+    final String? nextTurnId = session.isVsMode
+        ? _nextPlayerIdAfter(
+            session.pendingPassedPlayerId ?? fromPlayerId,
+            finalPlayers,
+          )
+        : null;
+
     emit(state.copyWith(
       session: session.copyWith(
         players: finalPlayers,
@@ -414,8 +500,10 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         successMessage: message,
         clearError: true,
         actionLog: [...session.actionLog, action],
+        currentTurnPlayerId: nextTurnId,
       ),
     ));
+    _scheduleBotTurn();
   }
 
   // ── OpenRoundSettlement ──────────────────────────────────────────────────────
@@ -445,6 +533,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       players: session.players,
       winnerPlayerId: event.winnerPlayerId,
       currentCrownPlayerId: session.crownPlayerId,
+      isStockEmpty: session.stockStones.isEmpty,
     );
 
     emit(state.copyWith(
@@ -576,14 +665,21 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
 
   void _onStartNextRound(StartNextRound event, Emitter<GameTableState> emit) {
     final session = state.session;
-    final stock = GameRuleUtils.createInitialStock(session.totalStonesConfig);
+    final stock = session.isVsMode
+        ? session.stockStones
+        : GameRuleUtils.createInitialStock(session.totalStonesConfig);
     final resetPlayers = session.players
-        .map((p) => p.copyWith(
-              smallStoneCount: 0,
-              hasBigStone: false,
-              hadZeroStoneThisRound: false,
-              passCount: 0,
-            ))
+        .map((p) => session.isVsMode
+            ? p.copyWith(
+                passCount: 0,
+                hadZeroStoneThisRound: false,
+              )
+            : p.copyWith(
+                smallStoneCount: 0,
+                hasBigStone: false,
+                hadZeroStoneThisRound: false,
+                passCount: 0,
+              ))
         .toList();
 
     final startPlayerId = session.crownPlayerId ?? session.players.first.id;
@@ -603,22 +699,29 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
 
     final nextRoundNumber = session.roundHistory.length + 1;
 
+    GameSessionModel newSession = session.copyWith(
+      players: resetPlayers,
+      currentRoundNumber: nextRoundNumber,
+      phase: GamePhase.initialDraw,
+      stockStones: stock,
+      currentTurnPlayerId: startPlayerId,
+      clearDistributor: true,
+      clearPendingPassed: true,
+      clearSelectedStone: true,
+      clearSettlementPreview: true,
+      clearError: true,
+      successMessage: msg,
+    );
+
+    if (session.isVsMode) {
+      newSession = _initializeDominoSession(newSession);
+    }
+
     emit(state.copyWith(
-      session: session.copyWith(
-        players: resetPlayers,
-        currentRoundNumber: nextRoundNumber,
-        phase: GamePhase.initialDraw,
-        stockStones: stock,
-        currentTurnPlayerId: startPlayerId,
-        clearDistributor: true,
-        clearPendingPassed: true,
-        clearSelectedStone: true,
-        clearSettlementPreview: true,
-        clearError: true,
-        successMessage: msg,
-      ),
+      session: newSession,
       isSelectingPassCauser: false,
     ));
+    _scheduleBotTurn();
   }
 
   // ── UndoLastAction ───────────────────────────────────────────────────────────
@@ -655,22 +758,29 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         .toList();
     final startPlayerId = session.crownPlayerId ?? session.players.first.id;
 
+    GameSessionModel newSession = session.copyWith(
+      players: resetPlayers,
+      phase: GamePhase.initialDraw,
+      stockStones: stock,
+      currentTurnPlayerId: startPlayerId,
+      clearDistributor: true,
+      clearPendingPassed: true,
+      clearSelectedStone: true,
+      clearSettlementPreview: true,
+      actionLog: const [],
+      clearError: true,
+      successMessage: 'Game direset.',
+    );
+
+    if (session.isVsMode) {
+      newSession = _initializeDominoSession(newSession);
+    }
+
     emit(state.copyWith(
-      session: session.copyWith(
-        players: resetPlayers,
-        phase: GamePhase.initialDraw,
-        stockStones: stock,
-        currentTurnPlayerId: startPlayerId,
-        clearDistributor: true,
-        clearPendingPassed: true,
-        clearSelectedStone: true,
-        clearSettlementPreview: true,
-        actionLog: const [],
-        clearError: true,
-        successMessage: 'Game direset.',
-      ),
+      session: newSession,
       isSelectingPassCauser: false,
     ));
+    _scheduleBotTurn();
   }
 
   // ── ResetGame ────────────────────────────────────────────────────────────────
@@ -707,5 +817,261 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         clearSuccess: true,
       ),
     ));
+  }
+
+  // ── PlayDominoTile ───────────────────────────────────────────────────────────
+
+  void _onPlayDominoTile(PlayDominoTile event, Emitter<GameTableState> emit) {
+    final session = state.session;
+    final players = session.players;
+    final activePlayer = GameRuleUtils.getPlayerById(players, event.playerId);
+
+    if (session.currentTurnPlayerId != event.playerId) {
+      emit(state.copyWith(
+        session: session.copyWith(
+          errorMessage: 'Bukan giliran Anda.',
+          clearSuccess: true,
+        ),
+      ));
+      return;
+    }
+
+    final hand = List<DominoTileModel>.from(session.playerHands[event.playerId] ?? const []);
+    if (!hand.contains(event.tile)) {
+      emit(state.copyWith(
+        session: session.copyWith(
+          errorMessage: 'Kartu tidak ada di tangan.',
+          clearSuccess: true,
+        ),
+      ));
+      return;
+    }
+
+    // 1. Remove tile from hand
+    hand.remove(event.tile);
+
+    // 2. Add tile to chain
+    final chain = List<DominoTileModel>.from(session.dominoChain);
+    final DominoTileModel placedTile;
+    if (event.side == 'left') {
+      placedTile = DominoEngine.placeLeft(event.tile, chain);
+      chain.insert(0, placedTile);
+    } else {
+      placedTile = DominoEngine.placeRight(event.tile, chain);
+      chain.add(placedTile);
+    }
+
+    final updatedHands = Map<String, List<DominoTileModel>>.from(session.playerHands);
+    updatedHands[event.playerId] = hand;
+
+    final String actionMsg = '${activePlayer.name} menaruh [${event.tile.sideA}|${event.tile.sideB}] di ${event.side == 'left' ? 'kiri' : 'kanan'}.';
+
+    // 3. Check for win condition
+    if (hand.isEmpty) {
+      // Round ends! Player wins the round
+      final preview = GameRuleUtils.createSettlementPreview(
+        players: players,
+        winnerPlayerId: event.playerId,
+        currentCrownPlayerId: session.crownPlayerId,
+        isStockEmpty: session.stockStones.isEmpty,
+      );
+
+      emit(state.copyWith(
+        session: session.copyWith(
+          dominoChain: chain,
+          playerHands: updatedHands,
+          consecutivePassCount: 0,
+          phase: GamePhase.roundSettlement,
+          settlementPreview: preview,
+          successMessage: '$actionMsg ${activePlayer.name} menang ronde ini!',
+          clearError: true,
+        ),
+        isSelectingPassCauser: false,
+      ));
+      return;
+    }
+
+    // Advance turn to next player
+    final nextPlayerId = _nextPlayerIdAfter(event.playerId, players) ?? players.first.id;
+
+    emit(state.copyWith(
+      session: session.copyWith(
+        dominoChain: chain,
+        playerHands: updatedHands,
+        consecutivePassCount: 0, // Reset pass count on successful play
+        currentTurnPlayerId: nextPlayerId,
+        successMessage: actionMsg,
+        clearError: true,
+      ),
+    ));
+
+    _scheduleBotTurn();
+  }
+
+  // ── Domino Setup Helper ─────────────────────────────────────────────────────
+
+  GameSessionModel _initializeDominoSession(GameSessionModel session) {
+    if (!session.isVsMode) return session;
+
+    // 1. Generate & shuffle 28 tiles
+    final tiles = DominoEngine.createFullSet();
+    final shuffled = DominoEngine.shuffle(tiles);
+
+    // 2. Deal 7 tiles to each player (1 human + 3 bots)
+    final playerIds = session.players.map((p) => p.id).toList();
+    final hands = DominoEngine.dealHands(playerIds, shuffled);
+
+    // 3. Find starting player
+    final String startingPlayerId;
+    if (session.crownPlayerId != null) {
+      // If there is a Kades (Crown/Kades is not null), Kades starts first!
+      startingPlayerId = session.crownPlayerId!;
+    } else if (session.roundHistory.isNotEmpty) {
+      // If there is no Kades yet, the winner of the previous round starts first!
+      startingPlayerId = session.roundHistory.last.winnerPlayerId;
+    } else {
+      // Game 1 (no Kades, no history): starting player holds the highest double (6-6)!
+      startingPlayerId = DominoEngine.findStartingPlayer(hands);
+    }
+    final startPlayer = session.players.firstWhere((p) => p.id == startingPlayerId);
+
+    // 4. Find starting tile in starting player's hand
+    final startingTile = DominoEngine.findStartingTile(hands[startingPlayerId]!);
+
+    // 5. Place it to the chain
+    final dominoChain = [startingTile];
+
+    // 6. Remove starting tile from starting player's hand
+    final updatedHands = Map<String, List<DominoTileModel>>.from(hands);
+    final updatedHand = List<DominoTileModel>.from(hands[startingPlayerId]!);
+    updatedHand.remove(startingTile);
+    updatedHands[startingPlayerId] = updatedHand;
+
+    // 7. Advance turn to next player in clockwise order
+    final firstActivePlayerId = _nextPlayerIdAfter(startingPlayerId, session.players) ?? session.players.first.id;
+    final firstActivePlayerName = session.players.firstWhere((p) => p.id == firstActivePlayerId).name;
+
+    return session.copyWith(
+      dominoChain: dominoChain,
+      playerHands: updatedHands,
+      currentTurnPlayerId: firstActivePlayerId,
+      consecutivePassCount: 0,
+      phase: GamePhase.playing,
+      successMessage: '${startPlayer.name} memulai dengan [${startingTile.sideA}|${startingTile.sideB}]. Giliran $firstActivePlayerName.',
+    );
+  }
+
+  // ── Bot Turn Scheduler ───────────────────────────────────────────────────────
+
+  /// Returns the next player ID in round-robin order after [fromId].
+  String? _nextPlayerIdAfter(String fromId, List<PlayerModel> players) {
+    if (players.isEmpty) return null;
+    final idx = players.indexWhere((p) => p.id == fromId);
+    if (idx == -1) return players.first.id;
+    return players[(idx + 1) % players.length].id;
+  }
+
+  /// Find which bot (if any) needs to act right now.
+  /// Returns the active bot ID, or null if it's a human's turn.
+  String? _activeBotId(GameTableState s) {
+    final session = s.session;
+    if (!session.isVsMode || session.botPlayerIds.isEmpty) return null;
+    final bots = session.botPlayerIds;
+
+    // Check causer selection (bot is the one who passed)
+    if (s.isSelectingPassCauser &&
+        bots.contains(session.pendingPassedPlayerId)) {
+      return session.pendingPassedPlayerId;
+    }
+    // Check distribution (bot is the active distributor)
+    if (bots.contains(session.currentDistributorPlayerId)) {
+      return session.currentDistributorPlayerId;
+    }
+    // Check normal turn (bot is the current player)
+    if (bots.contains(session.currentTurnPlayerId)) {
+      return session.currentTurnPlayerId;
+    }
+    return null;
+  }
+
+  /// Schedule a bot action after a natural delay.
+  void _scheduleBotTurn() {
+    final snap = state;
+    final activeBotId = _activeBotId(snap);
+    if (activeBotId == null) return;
+
+    final action = BotEngine.decideTurnAction(
+      session: snap.session,
+      botId: activeBotId,
+      isSelectingPassCauser: snap.isSelectingPassCauser,
+    );
+    if (action == BotTurnAction.idle) return;
+
+    final delay = action == BotTurnAction.distribute
+        ? const Duration(milliseconds: 600)
+        : const Duration(milliseconds: 900);
+
+    Future.delayed(delay, () {
+      if (isClosed) return;
+
+      // Re-validate after delay — state may have changed
+      final latest = state;
+      final latestBotId = _activeBotId(latest);
+      if (latestBotId == null || latestBotId != activeBotId) return;
+
+      final latestAction = BotEngine.decideTurnAction(
+        session: latest.session,
+        botId: latestBotId,
+        isSelectingPassCauser: latest.isSelectingPassCauser,
+      );
+
+      switch (latestAction) {
+        case BotTurnAction.playDomino:
+          final botHand = latest.session.playerHands[latestBotId] ?? const [];
+          final decision = DominoEngine.decideBotPlay(
+            hand: botHand,
+            chain: latest.session.dominoChain,
+          );
+          if (decision != null) {
+            add(PlayDominoTile(
+              playerId: latestBotId,
+              tile: decision['tile'] as DominoTileModel,
+              side: decision['side'] as String,
+            ));
+          }
+
+        case BotTurnAction.pass:
+          add(PlayerPass(latestBotId));
+
+        case BotTurnAction.selectCauser:
+          final causerId = BotEngine.selectPassCauser(
+            session: latest.session,
+            botId: latestBotId,
+          );
+          if (causerId != null) add(SelectPassCauser(causerId));
+
+        case BotTurnAction.distribute:
+          final decision = BotEngine.selectDistribution(
+            session: latest.session,
+            botId: latestBotId,
+          );
+          if (decision != null) {
+            if (decision.stoneType == StoneType.small) {
+              add(DistributeSmallStone(
+                fromPlayerId: latestBotId,
+                toPlayerId: decision.toPlayerId,
+              ));
+            } else {
+              add(DistributeBigStone(
+                fromPlayerId: latestBotId,
+                toPlayerId: decision.toPlayerId,
+              ));
+            }
+          }
+
+        case BotTurnAction.idle:
+          break;
+      }
+    });
   }
 }

@@ -122,6 +122,7 @@ class GameRuleUtils {
     required List<PlayerModel> players,
     required String winnerPlayerId,
     required String? currentCrownPlayerId,
+    bool isStockEmpty = true,
   }) {
     // 1. Keep previous-player ID for older saved result shape.
     final prevPlayer = getPreviousPlayer(players, winnerPlayerId);
@@ -130,14 +131,16 @@ class GameRuleUtils {
     final playersAfterSettlement = List<PlayerModel>.from(players);
 
     // 3. Determine Hansip from updated point totals.
-    final tiePlayers = getHansipTiePlayers(playersAfterSettlement);
+    final List<String> tiePlayers = isStockEmpty
+        ? getHansipTiePlayers(playersAfterSettlement)
+        : const [];
     final suggestedHansip = tiePlayers.length == 1 ? tiePlayers.first : null;
 
     // 4. Determine Crown.
     final winnerAfterSettlement =
         getPlayerById(playersAfterSettlement, winnerPlayerId);
     final willCrownMove =
-        canWinnerReceiveCrownAfterSettlement(winnerAfterSettlement);
+        isStockEmpty && canWinnerReceiveCrownAfterSettlement(winnerAfterSettlement);
     final nextCrownPlayerId =
         willCrownMove ? winnerPlayerId : currentCrownPlayerId;
 

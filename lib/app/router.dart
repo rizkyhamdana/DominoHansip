@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:crownpass/features/splash/page/splash_page.dart';
 import 'package:crownpass/features/home/page/home_page.dart';
+import 'package:crownpass/features/mode_select/page/mode_select_page.dart';
 import 'package:crownpass/features/game_setup/page/game_setup_page.dart';
+import 'package:crownpass/features/vs_setup/page/vs_setup_page.dart';
 import 'package:crownpass/features/game_table/page/game_table_page.dart';
 import 'package:crownpass/features/round_settlement/page/round_settlement_page.dart';
 import 'package:crownpass/features/history/page/history_page.dart';
@@ -11,7 +13,9 @@ import 'package:crownpass/features/statistics/page/statistics_page.dart';
 class AppRouter {
   static const String splash = '/';
   static const String home = '/home';
+  static const String modeSelect = '/mode-select';
   static const String gameSetup = '/game-setup';
+  static const String vsSetup = '/vs-setup';
   static const String gameTable = '/game-table';
   static const String roundSettlement = '/round-settlement';
   static const String history = '/history';
@@ -23,8 +27,12 @@ class AppRouter {
         return _fade(const SplashPage(), settings);
       case home:
         return _slide(const HomePage(), settings);
+      case modeSelect:
+        return _slide(const ModeSelectPage(), settings);
       case gameSetup:
         return _slide(const GameSetupPage(), settings);
+      case vsSetup:
+        return _slide(const VsSetupPage(), settings);
       case gameTable:
         return _slide(const GameTablePage(), settings);
       case roundSettlement:

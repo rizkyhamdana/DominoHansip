@@ -4,6 +4,7 @@ import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/data/models/game_action_model.dart';
 import 'package:crownpass/data/models/round_result_model.dart';
 import 'package:crownpass/data/models/settlement_preview_model.dart';
+import 'package:crownpass/data/models/domino_tile_model.dart';
 
 class GameSessionModel extends Equatable {
   final List<PlayerModel> players;
@@ -23,6 +24,14 @@ class GameSessionModel extends Equatable {
   final String? successMessage;
   final int totalStonesConfig;
 
+  final bool isVsMode;
+  final List<String> botPlayerIds;
+
+  // Domino-specific fields
+  final List<DominoTileModel> dominoChain;
+  final Map<String, List<DominoTileModel>> playerHands;
+  final int consecutivePassCount;
+
   const GameSessionModel({
     required this.players,
     required this.currentRoundNumber,
@@ -40,6 +49,11 @@ class GameSessionModel extends Equatable {
     this.errorMessage,
     this.successMessage,
     this.totalStonesConfig = 16,
+    this.isVsMode = false,
+    this.botPlayerIds = const [],
+    this.dominoChain = const [],
+    this.playerHands = const {},
+    this.consecutivePassCount = 0,
   });
 
   factory GameSessionModel.initial() => const GameSessionModel(
@@ -50,9 +64,15 @@ class GameSessionModel extends Equatable {
         actionLog: [],
         roundHistory: [],
         totalStonesConfig: 16,
+        isVsMode: false,
+        botPlayerIds: [],
+        dominoChain: [],
+        playerHands: {},
+        consecutivePassCount: 0,
       );
 
   bool get hasActiveGame => phase != GamePhase.setup && players.isNotEmpty;
+  bool isBot(String playerId) => botPlayerIds.contains(playerId);
 
   int get stockCount => stockStones.length;
 
@@ -94,6 +114,11 @@ class GameSessionModel extends Equatable {
     String? successMessage,
     bool clearSuccess = false,
     int? totalStonesConfig,
+    bool? isVsMode,
+    List<String>? botPlayerIds,
+    List<DominoTileModel>? dominoChain,
+    Map<String, List<DominoTileModel>>? playerHands,
+    int? consecutivePassCount,
   }) {
     return GameSessionModel(
       players: players ?? this.players,
@@ -125,6 +150,11 @@ class GameSessionModel extends Equatable {
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),
       totalStonesConfig: totalStonesConfig ?? this.totalStonesConfig,
+      isVsMode: isVsMode ?? this.isVsMode,
+      botPlayerIds: botPlayerIds ?? this.botPlayerIds,
+      dominoChain: dominoChain ?? this.dominoChain,
+      playerHands: playerHands ?? this.playerHands,
+      consecutivePassCount: consecutivePassCount ?? this.consecutivePassCount,
     );
   }
 
@@ -145,6 +175,11 @@ class GameSessionModel extends Equatable {
         'errorMessage': errorMessage,
         'successMessage': successMessage,
         'totalStonesConfig': totalStonesConfig,
+        'isVsMode': isVsMode,
+        'botPlayerIds': botPlayerIds,
+        'dominoChain': dominoChain.map((t) => t.toJson()).toList(),
+        'playerHands': playerHands.map((k, v) => MapEntry(k, v.map((t) => t.toJson()).toList())),
+        'consecutivePassCount': consecutivePassCount,
       };
 
   factory GameSessionModel.fromJson(Map<String, dynamic> json) =>
@@ -179,6 +214,24 @@ class GameSessionModel extends Equatable {
         errorMessage: json['errorMessage'] as String?,
         successMessage: json['successMessage'] as String?,
         totalStonesConfig: (json['totalStonesConfig'] as int?) ?? 16,
+        isVsMode: (json['isVsMode'] as bool?) ?? false,
+        botPlayerIds:
+            (json['botPlayerIds'] as List<dynamic>?)?.cast<String>() ??
+            (json['botPlayerId'] != null ? [json['botPlayerId'] as String] : []),
+        dominoChain: (json['dominoChain'] as List<dynamic>?)
+                ?.map((t) => DominoTileModel.fromJson(t as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        playerHands: (json['playerHands'] as Map<String, dynamic>?)?.map(
+              (k, v) => MapEntry(
+                k,
+                (v as List<dynamic>)
+                    .map((t) => DominoTileModel.fromJson(t as Map<String, dynamic>))
+                    .toList(),
+              ),
+            ) ??
+            const {},
+        consecutivePassCount: (json['consecutivePassCount'] as int?) ?? 0,
       );
 
   @override
@@ -199,5 +252,10 @@ class GameSessionModel extends Equatable {
         errorMessage,
         successMessage,
         totalStonesConfig,
+        isVsMode,
+        botPlayerIds,
+        dominoChain,
+        playerHands,
+        consecutivePassCount,
       ];
 }

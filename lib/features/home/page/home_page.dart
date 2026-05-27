@@ -56,7 +56,7 @@ class HomePage extends StatelessWidget {
                       icon: Icons.play_arrow_rounded,
                       isPrimary: true,
                       onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.gameSetup),
+                          Navigator.pushNamed(context, AppRouter.modeSelect),
                     ),
 
                     if (hasGame) ...[

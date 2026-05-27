@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'package:crownpass/data/models/player_model.dart';
+import 'package:crownpass/data/models/domino_tile_model.dart';
 
 abstract class GameTableEvent extends Equatable {
   const GameTableEvent();
@@ -14,17 +15,27 @@ class InitializeGame extends GameTableEvent {
   final int totalStones;
   final bool isDragEnabled;
   final bool isHapticEnabled;
+  final bool isVsMode;
+  final List<String> botPlayerIds;
 
   const InitializeGame({
     required this.players,
     required this.totalStones,
     this.isDragEnabled = true,
     this.isHapticEnabled = true,
+    this.isVsMode = false,
+    this.botPlayerIds = const [],
   });
 
   @override
-  List<Object?> get props =>
-      [players, totalStones, isDragEnabled, isHapticEnabled];
+  List<Object?> get props => [
+        players,
+        totalStones,
+        isDragEnabled,
+        isHapticEnabled,
+        isVsMode,
+        botPlayerIds
+      ];
 }
 
 class StartRound extends GameTableEvent {
@@ -152,3 +163,19 @@ class DismissPassCauserSelection extends GameTableEvent {
 class CancelRoundSettlement extends GameTableEvent {
   const CancelRoundSettlement();
 }
+
+class PlayDominoTile extends GameTableEvent {
+  final String playerId;
+  final DominoTileModel tile;
+  final String side; // 'left' or 'right'
+
+  const PlayDominoTile({
+    required this.playerId,
+    required this.tile,
+    required this.side,
+  });
+
+  @override
+  List<Object?> get props => [playerId, tile, side];
+}
+

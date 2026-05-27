@@ -19,6 +19,7 @@ class PlayerSeatCard extends StatelessWidget {
   final bool isDistributor;
   final VoidCallback? onTap;
   final Function(StoneDropData)? onStoneDropped;
+  final int? dominoTileCount;
 
   const PlayerSeatCard({
     super.key,
@@ -31,6 +32,7 @@ class PlayerSeatCard extends StatelessWidget {
     this.isDistributor = false,
     this.onTap,
     this.onStoneDropped,
+    this.dominoTileCount,
   });
 
   @override
@@ -155,6 +157,29 @@ class PlayerSeatCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
           ),
+
+          if (dominoTileCount != null) ...[
+            const SizedBox(height: AppTheme.spaceXS),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBorder.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppTheme.radiusRound),
+                border: Border.all(
+                  color: AppTheme.cardBorder.withValues(alpha: 0.15),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                '📇 $dominoTileCount Kartu',
+                style: GoogleFonts.inter(
+                  color: AppTheme.textPrimary,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
 
           if (player.totalStoneCount == 0)
             Text(

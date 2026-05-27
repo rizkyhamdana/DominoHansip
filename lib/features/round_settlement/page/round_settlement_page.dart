@@ -89,11 +89,13 @@ class _RoundSettlementView extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Text('🏆', style: TextStyle(fontSize: 22)),
+                  Text(session.isVsMode ? '🤖' : '🏆', style: const TextStyle(fontSize: 22)),
                   const SizedBox(width: AppTheme.spaceSM),
                   Expanded(
                     child: Text(
-                      'Pilih pemain yang memenangkan game ini.',
+                      session.isVsMode
+                          ? 'Hasil ronde telah dikalkulasi secara otomatis oleh sistem.'
+                          : 'Pilih pemain yang memenangkan game ini.',
                       style: GoogleFonts.outfit(
                         color: AppTheme.textPrimary,
                         fontSize: 14,
@@ -107,98 +109,100 @@ class _RoundSettlementView extends StatelessWidget {
 
             const SizedBox(height: AppTheme.spaceLG),
 
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 4),
-              child: Text(
-                'PILIH PEMENANG',
-                style: GoogleFonts.outfit(
-                  color: AppTheme.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
+            if (!session.isVsMode) ...[
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 4),
+                child: Text(
+                  'PILIH PEMENANG',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSM),
+              const SizedBox(height: AppTheme.spaceSM),
 
-            // Player selection list
-            ...session.players.map((player) {
-              final isSelected = preview?.winnerPlayerId == player.id;
-              return GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context
-                      .read<GameTableBloc>()
-                      .add(SelectRoundWinner(player.id));
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  margin: const EdgeInsets.only(bottom: AppTheme.spaceMD),
-                  padding: const EdgeInsets.all(AppTheme.spaceMD),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.gold : AppTheme.cardSurface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    border: Border.all(
-                      color: AppTheme.cardBorder,
-                      width: 2.5,
+              // Player selection list
+              ...session.players.map((player) {
+                final isSelected = preview?.winnerPlayerId == player.id;
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context
+                        .read<GameTableBloc>()
+                        .add(SelectRoundWinner(player.id));
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    margin: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+                    padding: const EdgeInsets.all(AppTheme.spaceMD),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.gold : AppTheme.cardSurface,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                      border: Border.all(
+                        color: AppTheme.cardBorder,
+                        width: 2.5,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              const BoxShadow(
+                                color: AppTheme.cardBorder,
+                                blurRadius: 0,
+                                offset: Offset(2.5, 2.5),
+                              )
+                            ]
+                          : null,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            const BoxShadow(
-                              color: AppTheme.cardBorder,
-                              blurRadius: 0,
-                              offset: Offset(2.5, 2.5),
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    children: [
-                      PlayerAvatar(
-                        name: player.name,
-                        colorValue: player.avatarColorValue,
-                        radius: 20,
-                        isHighlighted: isSelected,
-                      ),
-                      const SizedBox(width: AppTheme.spaceMD),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              player.name,
-                              style: GoogleFonts.outfit(
-                                color: AppTheme.textPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              '${player.totalStoneCount} batu · ${player.totalPoint} poin',
-                              style: GoogleFonts.inter(
-                                color: AppTheme.textSecondary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                    child: Row(
+                      children: [
+                        PlayerAvatar(
+                          name: player.name,
+                          colorValue: player.avatarColorValue,
+                          radius: 20,
+                          isHighlighted: isSelected,
                         ),
-                      ),
-                      if (session.crownPlayerId == player.id) ...[
-                        const CrownBadge(size: 16),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppTheme.spaceMD),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                player.name,
+                                style: GoogleFonts.outfit(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                '${player.totalStoneCount} batu · ${player.totalPoint} poin',
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (session.crownPlayerId == player.id) ...[
+                          const CrownBadge(size: 16),
+                          const SizedBox(width: 4),
+                        ],
+                        if (session.hansipPlayerId == player.id) ...[
+                          const HansipBadge(size: 16),
+                          const SizedBox(width: 4),
+                        ],
+                        if (isSelected)
+                          const Text('🥇', style: TextStyle(fontSize: 20)),
                       ],
-                      if (session.hansipPlayerId == player.id) ...[
-                        const HansipBadge(size: 16),
-                        const SizedBox(width: 4),
-                      ],
-                      if (isSelected)
-                        const Text('🥇', style: TextStyle(fontSize: 20)),
-                    ],
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ],
 
             // Preview section
             if (preview != null) ...[

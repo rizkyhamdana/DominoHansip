@@ -18,9 +18,33 @@ import 'package:crownpass/features/game_table/widget/distribution_tray.dart';
 import 'package:crownpass/features/game_table/widget/game_center_panel.dart';
 import 'package:crownpass/features/game_table/widget/player_seat_card.dart';
 import 'package:crownpass/features/game_table/widget/stock_pile_widget.dart';
+import 'package:crownpass/features/game_table/widget/domino_chain_view.dart';
+import 'package:crownpass/features/game_table/widget/player_hand_deck.dart';
+import 'package:crownpass/core/utils/domino_engine.dart';
 
-class GameTablePage extends StatelessWidget {
+class GameTablePage extends StatefulWidget {
   const GameTablePage({super.key});
+
+  @override
+  State<GameTablePage> createState() => _GameTablePageState();
+}
+
+class _GameTablePageState extends State<GameTablePage> {
+  bool _hasPushedSettlement = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Hide system overlays for immersive gameplay experience
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    // Restore normal system UI bars
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +73,13 @@ class GameTablePage extends StatelessWidget {
           });
         }
 
+        if (session.phase != GamePhase.roundSettlement) {
+          _hasPushedSettlement = false;
+        }
+
         // Navigate to settlement page
-        if (session.phase == GamePhase.roundSettlement) {
+        if (session.phase == GamePhase.roundSettlement && !_hasPushedSettlement) {
+          _hasPushedSettlement = true;
           Navigator.pushNamed(context, AppRouter.roundSettlement);
         }
 
@@ -82,6 +111,13 @@ class GameTablePage extends StatelessWidget {
           );
         }
 
+        final isBotTurn = session.isVsMode &&
+            session.botPlayerIds.isNotEmpty &&
+            (session.botPlayerIds.contains(session.currentTurnPlayerId) ||
+                session.botPlayerIds.contains(session.currentDistributorPlayerId) ||
+                (state.isSelectingPassCauser &&
+                    session.botPlayerIds.contains(session.pendingPassedPlayerId)));
+
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) async {
@@ -108,30 +144,68 @@ class GameTablePage extends StatelessWidget {
                       // App bar
                       _GameAppBar(session: session),
 
+                      // Bot thinking banner (VS mode)
+                      if (isBotTurn) _BotThinkingBanner(),
+
                       // Circular table area
                       Expanded(
                         child: _CircularTable(state: state),
                       ),
 
-                      // Action bar
-                      ActionBottomBar(
-                        session: session,
-                        selectedPlayerId: session.currentTurnPlayerId,
-                        onPass: () => _onPass(context, state),
-                        onSettle: () => context
-                            .read<GameTableBloc>()
-                            .add(const OpenRoundSettlement()),
-                        onUndo: () => context
-                            .read<GameTableBloc>()
-                            .add(const UndoLastAction()),
-                        onMenu: () => _showMenu(context, state),
+                      if (session.isVsMode) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSM),
+                          child: DominoChainView(chain: session.dominoChain),
+                        ),
+                        Builder(
+                          builder: (context) {
+                            final humanPlayer = session.players.firstWhere((p) => !session.isBot(p.id));
+                            final humanHand = session.playerHands[humanPlayer.id] ?? const [];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+                              child: PlayerHandDeck(
+                                humanPlayer: humanPlayer,
+                                hand: humanHand,
+                                chain: session.dominoChain,
+                                onPlay: (tile, side) {
+                                  context.read<GameTableBloc>().add(PlayDominoTile(
+                                        playerId: humanPlayer.id,
+                                        tile: tile,
+                                        side: side,
+                                      ));
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+
+                      // Action bar — disabled when bot's turn
+                      IgnorePointer(
+                        ignoring: isBotTurn,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: isBotTurn ? 0.4 : 1.0,
+                          child: ActionBottomBar(
+                            session: session,
+                            selectedPlayerId: session.currentTurnPlayerId,
+                            onPass: () => _onPass(context, state),
+                            onSettle: () => context
+                                .read<GameTableBloc>()
+                                .add(const OpenRoundSettlement()),
+                            onUndo: () => context
+                                .read<GameTableBloc>()
+                                .add(const UndoLastAction()),
+                            onMenu: () => _showMenu(context, state),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // Causer selection overlay
-                if (state.isSelectingPassCauser)
+                // Causer selection overlay — only show when human is the pending passer
+                if (state.isSelectingPassCauser && !isBotTurn)
                   _PassCauserOverlay(state: state),
 
                 // Floating top message banner
@@ -147,6 +221,10 @@ class GameTablePage extends StatelessWidget {
   void _onPass(BuildContext context, GameTableState state) {
     final playerId = state.session.currentTurnPlayerId;
     if (playerId == null) return;
+
+    final hand = state.session.playerHands[playerId] ?? const [];
+    final hasMoves = DominoEngine.hasValidMoves(hand, state.session.dominoChain);
+    if (hasMoves) return; // Block manual pass if they have playable tiles!
 
     if (state.isHapticEnabled) {
       HapticFeedback.lightImpact();
@@ -307,19 +385,122 @@ class _GameAppBar extends StatelessWidget {
             onPressed: () => Navigator.maybePop(context),
           ),
           Expanded(
-            child: Text(
-              '${AppConstants.appName} · Game ${session.currentRoundNumber}',
-              style: GoogleFonts.outfit(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${AppConstants.appName} · Game ${session.currentRoundNumber}',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (session.isVsMode) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.bigStoneMaroon.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusRound),
+                      border: Border.all(
+                        color: AppTheme.bigStoneMaroon.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Text(
+                      'VS',
+                      style: GoogleFonts.outfit(
+                        color: AppTheme.bigStoneMaroon,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(width: 48),
         ],
       ),
+    );
+  }
+}
+
+// ── Bot thinking banner ───────────────────────────────────────────────────────
+
+class _BotThinkingBanner extends StatefulWidget {
+  @override
+  State<_BotThinkingBanner> createState() => _BotThinkingBannerState();
+}
+
+class _BotThinkingBannerState extends State<_BotThinkingBanner>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (_, __) {
+        return Container(
+          margin: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMD, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.bigStoneMaroon
+                .withValues(alpha: 0.08 + _pulse.value * 0.06),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            border: Border.all(
+              color: AppTheme.bigStoneMaroon.withValues(alpha: 0.25),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.bigStoneMaroon,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '🤖 Bot sedang berpikir...',
+                style: GoogleFonts.outfit(
+                  color: AppTheme.bigStoneMaroon,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -337,11 +518,15 @@ class _CircularTable extends StatelessWidget {
       builder: (context, constraints) {
         final size = constraints.biggest;
         final center = Offset(size.width / 2, size.height / 2);
-        final players = state.session.players;
-        final n = players.length;
+        final session = state.session;
+        final players = session.players;
+        final displayPlayers = session.isVsMode 
+            ? players.where((p) => session.isBot(p.id)).toList() 
+            : players;
+        final n = displayPlayers.length;
 
         // Radius: adjust so cards don't overlap or go off screen
-        final radius = math.min(size.width, size.height) * 0.36;
+        final radius = math.min(size.width, size.height) * (session.isVsMode ? 0.28 : 0.36);
         const cardHalfW = 50.0;
         const cardHalfH = 70.0;
 
@@ -380,40 +565,98 @@ class _CircularTable extends StatelessWidget {
               child: GameCenterPanel(session: state.session),
             ),
 
-            // Center element: Distribution Tray or Stock Pile
+            // Center element: Stock Pile (if stock is present) or Board felt (VS Mode empty stock) / DistributionTray (Co-op Mode empty stock)
             Positioned(
-              left: center.dx - (showTray ? 70 : 55),
-              top: center.dy - (showTray ? 85 : 55),
-              child: showTray
-                  ? _buildCenterDistributionTray(context, state, distributorId!)
-                  : (state.session.stockCount > 0
-                      ? StockPileWidget(
-                          stockCount: state.session.stockCount,
-                          topStoneType: state.session.stockStones.firstOrNull,
-                          onTap: () {
-                            final playerId = state.session.currentTurnPlayerId;
-                            if (playerId != null) {
-                              if (state.isHapticEnabled) {
-                                HapticFeedback.lightImpact();
-                              }
-                              context
-                                  .read<GameTableBloc>()
-                                  .add(PlayerPass(playerId));
-                            }
-                          },
-                        )
-                      : const SizedBox.shrink()),
+              left: center.dx - (showTray ? 70 : (state.session.stockCount > 0 ? 55 : 45)),
+              top: center.dy - (showTray ? 85 : (state.session.stockCount > 0 ? 55 : 45)),
+              child: state.session.stockCount > 0
+                  ? StockPileWidget(
+                      stockCount: state.session.stockCount,
+                      topStoneType: state.session.stockStones.firstOrNull,
+                      onTap: () {
+                        final playerId = state.session.currentTurnPlayerId;
+                        final isHumanTurn = playerId != null && !state.session.isBot(playerId);
+                        if (isHumanTurn) {
+                          final hand = state.session.playerHands[playerId] ?? const [];
+                          final hasMoves = DominoEngine.hasValidMoves(hand, state.session.dominoChain);
+                          if (hasMoves) return; // Block pass if they have playable tiles!
+
+                          if (state.isHapticEnabled) {
+                            HapticFeedback.lightImpact();
+                          }
+                          context.read<GameTableBloc>().add(PlayerPass(playerId));
+                        }
+                      },
+                    )
+                  : (showTray
+                      ? _buildCenterDistributionTray(context, state, distributorId!)
+                      : (state.session.isVsMode
+                          ? Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                color: AppTheme.tableSurface,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppTheme.cardSurface.withValues(alpha: 0.35),
+                                  width: 3.0,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 4.0,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '🀰',
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        color: AppTheme.cardSurface.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'BOARD',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 2.0,
+                                        color: AppTheme.cardSurface.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink())),
             ),
 
             // Player seats
             ...List.generate(n, (i) {
-              // Start from bottom (270° = -π/2), go clockwise
-              final angle = (-math.pi / 2) + (2 * math.pi * i / n);
+              final double angle;
+              if (session.isVsMode) {
+                // Seating for 3 bots: Left, Top, Right
+                if (i == 0) {
+                  angle = math.pi; // Left
+                } else if (i == 1) {
+                  angle = -math.pi / 2; // Top
+                } else {
+                  angle = 0.0; // Right
+                }
+              } else {
+                angle = (-math.pi / 2) + (2 * math.pi * i / n);
+              }
+
               final x = center.dx + radius * math.cos(angle) - cardHalfW;
               final y = center.dy + radius * math.sin(angle) - cardHalfH;
 
-              final player = players[i];
-              final session = state.session;
+              final player = displayPlayers[i];
               final isDistributor = distributorId == player.id;
               final isCurrentTurn = session.currentTurnPlayerId == player.id;
 
@@ -435,6 +678,7 @@ class _CircularTable extends StatelessWidget {
                       isDistributor: isDistributor,
                       isDragTarget: isDragTarget,
                       onTap: () => _onPlayerTap(context, player, state),
+                      dominoTileCount: session.isVsMode ? (session.playerHands[player.id]?.length) : null,
                       onStoneDropped: isDragTarget
                           ? (data) {
                               if (state.isHapticEnabled) {
@@ -492,6 +736,11 @@ class _CircularTable extends StatelessWidget {
   void _onPlayerTap(
       BuildContext context, PlayerModel player, GameTableState state) {
     final session = state.session;
+
+    if (session.isVsMode) {
+      // In VS mode, manual player turn selection is disabled.
+      return;
+    }
 
     // Causer selection
     if (state.isSelectingPassCauser) {
