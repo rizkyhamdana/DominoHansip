@@ -1,6 +1,6 @@
 # Domino Hansip
 
-![Domino Hansip Logo](assets/images/app_logo.png)
+<img src="assets/images/app_logo.png" alt="Domino Hansip Logo" width="160">
 
 Domino Hansip adalah aplikasi Flutter untuk membantu mencatat jalannya permainan domino: pembagian batu, pass, pemenang game, perpindahan Kepala Desa, status Hansip, riwayat game, dan statistik pemain.
 
@@ -8,7 +8,7 @@ Aplikasi ini dibuat untuk menggantikan catatan manual saat bermain, sehingga pem
 
 ## Fitur Utama
 
-- Setup 2 sampai 6 pemain dengan nama dan warna avatar.
+- Setup 3 sampai 6 pemain dengan nama dan warna avatar.
 - Konfigurasi jumlah batu sebelum game dimulai.
 - Alur pengambilan batu dari stok tengah.
 - Catatan pass dan distribusi batu antar pemain.
