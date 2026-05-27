@@ -82,10 +82,8 @@ class StatisticsPage extends StatelessWidget {
                 subtitle: 'Total batu yang dibagikan',
                 icon: Icons.share_rounded,
                 color: AppTheme.textSecondary,
-                players: _sortedBy(
-                    players, (p) => p.totalDistributedStones),
-                valueFn: (p) =>
-                    '${p.totalDistributedStones} dibagi',
+                players: _sortedBy(players, (p) => p.totalDistributedStones),
+                valueFn: (p) => '${p.totalDistributedStones} dibagi',
               ),
               const SizedBox(height: AppTheme.spaceMD),
 
@@ -94,10 +92,8 @@ class StatisticsPage extends StatelessWidget {
                 subtitle: 'Total batu yang diterima',
                 icon: Icons.download_rounded,
                 color: AppTheme.bigStoneMaroon,
-                players:
-                    _sortedBy(players, (p) => p.totalReceivedStones),
-                valueFn: (p) =>
-                    '${p.totalReceivedStones} diterima',
+                players: _sortedBy(players, (p) => p.totalReceivedStones),
+                valueFn: (p) => '${p.totalReceivedStones} diterima',
               ),
               const SizedBox(height: AppTheme.spaceXXL),
             ],
@@ -195,7 +191,7 @@ class _StatSection extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                   ),
                   child: Icon(icon, color: color, size: 18),
                 ),
@@ -231,10 +227,9 @@ class _StatSection extends StatelessWidget {
 
             return Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spaceMD,
-                  vertical: AppTheme.spaceSM),
+                  horizontal: AppTheme.spaceMD, vertical: AppTheme.spaceSM),
               decoration: BoxDecoration(
-                color: isFirst ? color.withOpacity(0.06) : null,
+                color: isFirst ? color.withValues(alpha: 0.06) : null,
                 border: entry.key < nonZero.length - 1
                     ? const Border(
                         bottom: BorderSide(color: AppTheme.cardBorder))
@@ -250,7 +245,11 @@ class _StatSection extends StatelessWidget {
                   SizedBox(
                     width: 28,
                     child: Text(
-                      isFirst ? '🥇' : rank == 2 ? '🥈' : '$rank.',
+                      isFirst
+                          ? '🥇'
+                          : rank == 2
+                              ? '🥈'
+                              : '$rank.',
                       style: GoogleFonts.outfit(
                         color: isFirst ? color : AppTheme.textMuted,
                         fontSize: isFirst ? 18 : 12,
@@ -273,8 +272,7 @@ class _StatSection extends StatelessWidget {
                             ? AppTheme.textPrimary
                             : AppTheme.textSecondary,
                         fontSize: 14,
-                        fontWeight:
-                            isFirst ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isFirst ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                   ),

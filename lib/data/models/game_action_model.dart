@@ -31,7 +31,8 @@ class GameActionModel extends Equatable {
         'createdAt': createdAt.toIso8601String(),
       };
 
-  factory GameActionModel.fromJson(Map<String, dynamic> json) => GameActionModel(
+  factory GameActionModel.fromJson(Map<String, dynamic> json) =>
+      GameActionModel(
         id: json['id'] as String,
         type: json['type'] as String,
         description: json['description'] as String,

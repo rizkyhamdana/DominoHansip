@@ -38,7 +38,8 @@ class AppRouter {
     }
   }
 
-  static PageRouteBuilder _fade(Widget page, RouteSettings settings) => PageRouteBuilder(
+  static PageRouteBuilder _fade(Widget page, RouteSettings settings) =>
+      PageRouteBuilder(
         settings: settings,
         pageBuilder: (_, __, ___) => page,
         transitionsBuilder: (_, animation, __, child) =>
@@ -46,13 +47,15 @@ class AppRouter {
         transitionDuration: const Duration(milliseconds: 400),
       );
 
-  static PageRouteBuilder _slide(Widget page, RouteSettings settings) => PageRouteBuilder(
+  static PageRouteBuilder _slide(Widget page, RouteSettings settings) =>
+      PageRouteBuilder(
         settings: settings,
         pageBuilder: (_, __, ___) => page,
         transitionsBuilder: (_, animation, __, child) {
           final tween = Tween(begin: const Offset(1, 0), end: Offset.zero)
               .chain(CurveTween(curve: Curves.easeOutCubic));
-          return SlideTransition(position: animation.drive(tween), child: child);
+          return SlideTransition(
+              position: animation.drive(tween), child: child);
         },
         transitionDuration: const Duration(milliseconds: 350),
       );

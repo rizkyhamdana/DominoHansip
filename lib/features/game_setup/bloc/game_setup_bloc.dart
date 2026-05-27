@@ -39,7 +39,8 @@ class GameSetupBloc extends Bloc<GameSetupEvent, GameSetupState> {
             return SetupPlayerDraft(
               name: defaultNames[idx % defaultNames.length],
               colorValue: AppTheme
-                  .avatarColors[idx % AppTheme.avatarColors.length].value,
+                  .avatarColors[idx % AppTheme.avatarColors.length]
+                  .toARGB32(),
             );
           },
         ),

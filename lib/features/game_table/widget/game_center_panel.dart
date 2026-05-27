@@ -68,8 +68,11 @@ class GameCenterPanel extends StatelessWidget {
           _CenterRow(
             icon: Icons.inventory_2_rounded,
             label: 'Stok:',
-            value: session.stockCount > 0 ? '${session.stockCount} batu' : 'Habis',
-            color: session.stockCount > 0 ? AppTheme.textPrimary : AppTheme.textMuted,
+            value:
+                session.stockCount > 0 ? '${session.stockCount} batu' : 'Habis',
+            color: session.stockCount > 0
+                ? AppTheme.textPrimary
+                : AppTheme.textMuted,
           ),
           const SizedBox(height: 6),
 
@@ -78,7 +81,9 @@ class GameCenterPanel extends StatelessWidget {
             iconWidget: const CrownBadge(size: 11),
             label: 'Kades:',
             value: session.crownPlayer?.name ?? 'Belum ada',
-            color: session.crownPlayer != null ? AppTheme.textPrimary : AppTheme.textMuted,
+            color: session.crownPlayer != null
+                ? AppTheme.textPrimary
+                : AppTheme.textMuted,
           ),
           const SizedBox(height: 6),
 
@@ -87,7 +92,9 @@ class GameCenterPanel extends StatelessWidget {
             iconWidget: const HansipBadge(size: 11),
             label: 'Hansip:',
             value: session.hansipPlayer?.name ?? 'Belum ada',
-            color: session.hansipPlayer != null ? AppTheme.teal : AppTheme.textMuted,
+            color: session.hansipPlayer != null
+                ? AppTheme.teal
+                : AppTheme.textMuted,
           ),
         ],
       ),

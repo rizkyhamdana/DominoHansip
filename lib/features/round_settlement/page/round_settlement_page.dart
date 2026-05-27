@@ -84,7 +84,7 @@ class _RoundSettlementView extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(AppTheme.spaceMD),
               decoration: AppDecorations.glassCard(
-                color: AppTheme.gold.withOpacity(0.2),
+                color: AppTheme.gold.withValues(alpha: 0.2),
                 radius: AppTheme.radiusMD,
               ),
               child: Row(
@@ -213,7 +213,7 @@ class _RoundSettlementView extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: AppDecorations.glassCard(
-                    color: AppTheme.warning.withOpacity(0.2),
+                    color: AppTheme.warning.withValues(alpha: 0.2),
                     radius: AppTheme.radiusMD,
                   ),
                   child: Row(
@@ -427,7 +427,7 @@ class _SettlementPreviewCard extends StatelessWidget {
                   '${suggestedHansip.name} (${suggestedHansip.totalPoint} poin)',
             )
           else
-            _PreviewRow(
+            const _PreviewRow(
               icon: Icons.shield_outlined,
               color: AppTheme.warning,
               label: 'Hansip',

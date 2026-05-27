@@ -52,27 +52,21 @@ class GameSessionModel extends Equatable {
         totalStonesConfig: 16,
       );
 
-  bool get hasActiveGame =>
-      phase != GamePhase.setup && players.isNotEmpty;
+  bool get hasActiveGame => phase != GamePhase.setup && players.isNotEmpty;
 
   int get stockCount => stockStones.length;
 
-  PlayerModel? get crownPlayer =>
-      crownPlayerId != null
-          ? players.where((p) => p.id == crownPlayerId).firstOrNull
-          : null;
+  PlayerModel? get crownPlayer => crownPlayerId != null
+      ? players.where((p) => p.id == crownPlayerId).firstOrNull
+      : null;
 
-  PlayerModel? get hansipPlayer =>
-      hansipPlayerId != null
-          ? players.where((p) => p.id == hansipPlayerId).firstOrNull
-          : null;
+  PlayerModel? get hansipPlayer => hansipPlayerId != null
+      ? players.where((p) => p.id == hansipPlayerId).firstOrNull
+      : null;
 
-  PlayerModel? get currentDistributor =>
-      currentDistributorPlayerId != null
-          ? players
-              .where((p) => p.id == currentDistributorPlayerId)
-              .firstOrNull
-          : null;
+  PlayerModel? get currentDistributor => currentDistributorPlayerId != null
+      ? players.where((p) => p.id == currentDistributorPlayerId).firstOrNull
+      : null;
 
   GameSessionModel copyWith({
     List<PlayerModel>? players,
@@ -173,12 +167,10 @@ class GameSessionModel extends Equatable {
             ? StoneType.fromJson(json['selectedStoneType'] as String)
             : null,
         actionLog: (json['actionLog'] as List<dynamic>)
-            .map((a) =>
-                GameActionModel.fromJson(a as Map<String, dynamic>))
+            .map((a) => GameActionModel.fromJson(a as Map<String, dynamic>))
             .toList(),
         roundHistory: (json['roundHistory'] as List<dynamic>)
-            .map((r) =>
-                RoundResultModel.fromJson(r as Map<String, dynamic>))
+            .map((r) => RoundResultModel.fromJson(r as Map<String, dynamic>))
             .toList(),
         settlementPreview: json['settlementPreview'] != null
             ? SettlementPreviewModel.fromJson(

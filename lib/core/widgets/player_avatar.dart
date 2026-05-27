@@ -33,8 +33,8 @@ class PlayerAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Color(colorValue);
-    final colorIndex =
-        AppTheme.avatarColors.indexWhere((color) => color.value == colorValue);
+    final colorIndex = AppTheme.avatarColors
+        .indexWhere((color) => color.toARGB32() == colorValue);
     final emojiIndex = colorIndex >= 0
         ? colorIndex % avatarEmojis.length
         : colorValue.abs() % avatarEmojis.length;
@@ -46,7 +46,7 @@ class PlayerAvatar extends StatelessWidget {
       height: radius * 2,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(0.35),
+        color: color.withValues(alpha: 0.35),
         border: Border.all(
           color: AppTheme.cardBorder,
           width: isHighlighted ? 2.5 : 1.5,
@@ -54,8 +54,8 @@ class PlayerAvatar extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isHighlighted
-                ? color.withOpacity(0.4)
-                : AppTheme.cardBorder.withOpacity(0.12),
+                ? color.withValues(alpha: 0.4)
+                : AppTheme.cardBorder.withValues(alpha: 0.12),
             blurRadius: 0,
             offset: isHighlighted ? const Offset(3, 3) : const Offset(1.5, 1.5),
           ),

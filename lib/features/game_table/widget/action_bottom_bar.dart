@@ -5,7 +5,6 @@ import 'package:crownpass/app/theme.dart';
 import 'package:crownpass/data/models/game_session_model.dart';
 import 'package:crownpass/data/models/player_model.dart';
 
-
 class ActionBottomBar extends StatelessWidget {
   final GameSessionModel session;
   final String? selectedPlayerId;
@@ -32,8 +31,10 @@ class ActionBottomBar extends StatelessWidget {
   bool get _canSettle {
     final hasNoStones = session.players.any((p) => p.totalStoneCount == 0);
     final isStockEmpty = session.stockCount == 0;
-    
-    return (session.phase == GamePhase.playing || session.phase == GamePhase.initialDraw) &&
+
+    return (session.phase == GamePhase.playing ||
+            session.phase == GamePhase.initialDraw ||
+            session.phase == GamePhase.distributing) &&
         hasNoStones &&
         isStockEmpty;
   }
@@ -54,9 +55,9 @@ class ActionBottomBar extends StatelessWidget {
         AppTheme.spaceMD,
         AppTheme.spaceMD,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppTheme.cardSurface,
-        border: const Border(
+        border: Border(
           top: BorderSide(color: AppTheme.cardBorder),
         ),
       ),
@@ -141,11 +142,13 @@ class _BarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isEnabled = onTap != null;
     Color buttonColor = isPrimary ? AppTheme.gold : AppTheme.cardSurface;
-    Color borderAccentColor = isEnabled ? AppTheme.cardBorder : AppTheme.cardBorder.withOpacity(0.3);
+    Color borderAccentColor = isEnabled
+        ? AppTheme.cardBorder
+        : AppTheme.cardBorder.withValues(alpha: 0.3);
     Color labelColor = isPrimary ? AppTheme.textPrimary : color;
 
     if (!isEnabled) {
-      buttonColor = AppTheme.background.withOpacity(0.4);
+      buttonColor = AppTheme.background.withValues(alpha: 0.4);
       labelColor = AppTheme.textMuted;
     }
 
@@ -224,10 +227,14 @@ class _IconBarButton extends StatelessWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: isEnabled ? AppTheme.cardSurface : AppTheme.background.withOpacity(0.4),
+          color: isEnabled
+              ? AppTheme.cardSurface
+              : AppTheme.background.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
-            color: isEnabled ? AppTheme.cardBorder : AppTheme.cardBorder.withOpacity(0.3),
+            color: isEnabled
+                ? AppTheme.cardBorder
+                : AppTheme.cardBorder.withValues(alpha: 0.3),
             width: 2.0,
           ),
           boxShadow: isEnabled

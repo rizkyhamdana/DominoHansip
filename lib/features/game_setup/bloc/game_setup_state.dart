@@ -55,7 +55,7 @@ class GameSetupState extends Equatable {
       (i) => SetupPlayerDraft(
         name: defaultNames[i],
         colorValue:
-            AppTheme.avatarColors[i % AppTheme.avatarColors.length].value,
+            AppTheme.avatarColors[i % AppTheme.avatarColors.length].toARGB32(),
       ),
     );
   }

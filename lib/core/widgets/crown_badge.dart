@@ -57,7 +57,7 @@ class _CrownBadgeState extends State<CrownBadge>
               border: Border.all(color: AppTheme.cardBorder, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.cardBorder.withOpacity(0.15),
+                  color: AppTheme.cardBorder.withValues(alpha: 0.15),
                   blurRadius: 0,
                   offset: const Offset(1.5, 1.5),
                 ),

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'package:crownpass/data/models/game_session_model.dart';
+import 'package:crownpass/data/models/player_model.dart';
 
 class GameTableState extends Equatable {
   final GameSessionModel session;
@@ -38,14 +39,24 @@ class GameTableState extends Equatable {
         'session': session.toJson(),
         'isDragEnabled': isDragEnabled,
         'isHapticEnabled': isHapticEnabled,
+        'isSelectingPassCauser': isSelectingPassCauser,
       };
 
-  factory GameTableState.fromJson(Map<String, dynamic> json) => GameTableState(
-        session:
-            GameSessionModel.fromJson(json['session'] as Map<String, dynamic>),
-        isDragEnabled: (json['isDragEnabled'] as bool?) ?? true,
-        isHapticEnabled: (json['isHapticEnabled'] as bool?) ?? true,
-      );
+  factory GameTableState.fromJson(Map<String, dynamic> json) {
+    final session =
+        GameSessionModel.fromJson(json['session'] as Map<String, dynamic>);
+    final isSelectingPassCauser = (json['isSelectingPassCauser'] as bool?) ??
+        (session.phase == GamePhase.distributing &&
+            session.pendingPassedPlayerId != null &&
+            session.currentDistributorPlayerId == null);
+
+    return GameTableState(
+      session: session,
+      isDragEnabled: (json['isDragEnabled'] as bool?) ?? true,
+      isHapticEnabled: (json['isHapticEnabled'] as bool?) ?? true,
+      isSelectingPassCauser: isSelectingPassCauser,
+    );
+  }
 
   @override
   List<Object?> get props =>

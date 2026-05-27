@@ -37,7 +37,7 @@ class StockPileWidget extends StatelessWidget {
                 child: _PileStone(
                   size: 55,
                   face: '•ᴗ•',
-                  color: AppTheme.smallStoneIvory.withOpacity(0.85),
+                  color: AppTheme.smallStoneIvory.withValues(alpha: 0.85),
                   rotation: -0.2,
                 ),
               ),
@@ -49,7 +49,7 @@ class StockPileWidget extends StatelessWidget {
                 child: _PileStone(
                   size: 60,
                   face: '•ᴗ•',
-                  color: AppTheme.smallStoneIvory.withOpacity(0.95),
+                  color: AppTheme.smallStoneIvory.withValues(alpha: 0.95),
                   rotation: 0.15,
                 ),
               ),
@@ -87,7 +87,7 @@ class StockPileWidget extends StatelessWidget {
                         width: 20,
                         height: 10,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           borderRadius:
                               const BorderRadius.all(Radius.elliptical(10, 5)),
                         ),

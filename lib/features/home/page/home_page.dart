@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:crownpass/app/router.dart';
 import 'package:crownpass/app/theme.dart';
 import 'package:crownpass/core/constants/app_constants.dart';
+import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_bloc.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_event.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
@@ -64,8 +65,7 @@ class HomePage extends StatelessWidget {
                         label: 'Lanjutkan Game',
                         icon: Icons.sports_esports_rounded,
                         isPrimary: false,
-                        onTap: () =>
-                            Navigator.pushNamed(context, AppRouter.gameTable),
+                        onTap: () => _continueGame(context, state),
                       ),
                     ],
 
@@ -147,7 +147,7 @@ class HomePage extends StatelessWidget {
             border: Border.all(color: AppTheme.cardBorder, width: 2.5),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.cardBorder.withOpacity(0.15),
+                color: AppTheme.cardBorder.withValues(alpha: 0.15),
                 blurRadius: 0,
                 offset: const Offset(3, 3),
               ),
@@ -176,7 +176,7 @@ class HomePage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: AppTheme.teal.withOpacity(0.15),
+            color: AppTheme.teal.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppTheme.radiusRound),
             border: Border.all(color: AppTheme.cardBorder, width: 1.5),
           ),
@@ -245,6 +245,14 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+
+  void _continueGame(BuildContext context, GameTableState state) {
+    if (state.session.phase == GamePhase.roundFinished) {
+      context.read<GameTableBloc>().add(const StartNextRound());
+    }
+
+    Navigator.pushNamed(context, AppRouter.gameTable);
+  }
 }
 
 class _MainMenuButton extends StatelessWidget {
@@ -264,9 +272,9 @@ class _MainMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shadowColor = AppTheme.cardBorder;
+    const shadowColor = AppTheme.cardBorder;
     final buttonColor = isPrimary ? AppTheme.gold : AppTheme.cardSurface;
-    final textColor = AppTheme.textPrimary;
+    const textColor = AppTheme.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -280,11 +288,11 @@ class _MainMenuButton extends StatelessWidget {
             color: buttonColor,
             borderRadius: BorderRadius.circular(AppTheme.radiusLG),
             border: Border.all(color: AppTheme.cardBorder, width: 2.5),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: shadowColor,
                 blurRadius: 0,
-                offset: const Offset(3, 3),
+                offset: Offset(3, 3),
               ),
             ],
           ),

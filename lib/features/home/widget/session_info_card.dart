@@ -63,7 +63,7 @@ class SessionInfoCard extends StatelessWidget {
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.textMuted.withOpacity(0.1),
+                    color: AppTheme.textMuted.withValues(alpha: 0.1),
                   ),
                   child: const Icon(
                     Icons.loop_rounded,

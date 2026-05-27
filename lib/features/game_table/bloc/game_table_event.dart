@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 import 'package:crownpass/data/models/player_model.dart';
-import 'package:crownpass/data/models/game_session_model.dart';
 
 abstract class GameTableEvent extends Equatable {
   const GameTableEvent();
@@ -24,7 +23,8 @@ class InitializeGame extends GameTableEvent {
   });
 
   @override
-  List<Object?> get props => [players, totalStones, isDragEnabled, isHapticEnabled];
+  List<Object?> get props =>
+      [players, totalStones, isDragEnabled, isHapticEnabled];
 }
 
 class StartRound extends GameTableEvent {
@@ -152,4 +152,3 @@ class DismissPassCauserSelection extends GameTableEvent {
 class CancelRoundSettlement extends GameTableEvent {
   const CancelRoundSettlement();
 }
-

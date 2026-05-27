@@ -63,7 +63,7 @@ class _GameSetupView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Player count section
-                  _SectionHeader(title: 'Jumlah Pemain'),
+                  const _SectionHeader(title: 'Jumlah Pemain'),
                   const SizedBox(height: AppTheme.spaceSM),
                   _PlayerCountSelector(
                     selectedCount: state.playerCount,
@@ -73,7 +73,7 @@ class _GameSetupView extends StatelessWidget {
                   ),
 
                   const SizedBox(height: AppTheme.spaceLG),
-                  _SectionHeader(title: 'Nama Pemain'),
+                  const _SectionHeader(title: 'Nama Pemain'),
                   const SizedBox(height: AppTheme.spaceSM),
 
                   // Player input cards
@@ -101,7 +101,7 @@ class _GameSetupView extends StatelessWidget {
                   }),
 
                   const SizedBox(height: AppTheme.spaceLG),
-                  _SectionHeader(title: 'Konfigurasi Batu'),
+                  const _SectionHeader(title: 'Konfigurasi Batu'),
                   const SizedBox(height: AppTheme.spaceSM),
 
                   // Stone config
@@ -162,7 +162,7 @@ class _GameSetupView extends StatelessWidget {
                           border: Border.all(
                             color: state.isValid
                                 ? AppTheme.cardBorder
-                                : AppTheme.cardBorder.withOpacity(0.3),
+                                : AppTheme.cardBorder.withValues(alpha: 0.3),
                             width: 2.5,
                           ),
                           boxShadow: state.isValid
@@ -414,7 +414,7 @@ class _StoneConfigCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _StoneInfo(
+              const _StoneInfo(
                 label: 'Batu Besar',
                 value: '1 💎',
                 color: AppTheme.bigStoneMaroon,
@@ -424,7 +424,7 @@ class _StoneConfigCard extends StatelessWidget {
                 value: '${totalStones - 1} ⚪',
                 color: AppTheme.textPrimary,
               ),
-              _StoneInfo(
+              const _StoneInfo(
                 label: 'Nilai Besar',
                 value: '5 Poin',
                 color: AppTheme.goldDark,
@@ -470,74 +470,6 @@ class _StoneInfo extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ToggleCard extends StatelessWidget {
-  final String label;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _ToggleCard({
-    required this.label,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spaceMD,
-        vertical: AppTheme.spaceSM,
-      ),
-      decoration: AppDecorations.glassCard(
-        color: AppTheme.cardSurface,
-        radius: AppTheme.radiusMD,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.outfit(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: (val) {
-              HapticFeedback.lightImpact();
-              onChanged(val);
-            },
-            activeColor: AppTheme.gold,
-            activeTrackColor: AppTheme.gold.withOpacity(0.3),
-            inactiveThumbColor: AppTheme.textSecondary,
-            inactiveTrackColor: AppTheme.background,
-            trackOutlineColor: WidgetStateProperty.all(AppTheme.cardBorder),
-          ),
-        ],
-      ),
     );
   }
 }

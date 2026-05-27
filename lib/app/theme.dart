@@ -3,10 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // ── Palette (Playful Board-Game Cartoon Style) ─────────────────────────────
-  static const Color background = Color(0xFFFFFDF5); // Warm cream board background
-  static const Color tableSurface = Color(0xFF23A89C); // Vibrant board-game teal
+  static const Color background =
+      Color(0xFFFFFDF5); // Warm cream board background
+  static const Color tableSurface =
+      Color(0xFF23A89C); // Vibrant board-game teal
   static const Color cardSurface = Color(0xFFFFFFFF); // Chunky pure white cards
-  static const Color cardBorder = Color(0xFF1E2229); // Thick dark charcoal outlines
+  static const Color cardBorder =
+      Color(0xFF1E2229); // Thick dark charcoal outlines
 
   static const Color gold = Color(0xFFFFD166); // Bouncy warm yellow/gold
   static const Color goldLight = Color(0xFFFFE194);
@@ -15,14 +18,19 @@ class AppTheme {
   static const Color teal = Color(0xFF06D6A0); // Bubbly mint teal
   static const Color tealLight = Color(0xFF4EE8C4);
 
-  static const Color bigStoneMaroon = Color(0xFFFF6B6B); // Soft playful red/coral
+  static const Color bigStoneMaroon =
+      Color(0xFFFF6B6B); // Soft playful red/coral
   static const Color bigStoneGold = Color(0xFFFFD166);
-  static const Color smallStoneIvory = Color(0xFFECE2D0); // Cozy warm pebble cream
+  static const Color smallStoneIvory =
+      Color(0xFFECE2D0); // Cozy warm pebble cream
   static const Color smallStoneDark = Color(0xFF8D8270);
 
-  static const Color textPrimary = Color(0xFF232B38); // Soft dark slate text (no pure black)
-  static const Color textSecondary = Color(0xFF5A667A); // Slate-gray secondary text
-  static const Color textMuted = Color(0xFF8F9BB3); // Light gray-blue placeholder text
+  static const Color textPrimary =
+      Color(0xFF232B38); // Soft dark slate text (no pure black)
+  static const Color textSecondary =
+      Color(0xFF5A667A); // Slate-gray secondary text
+  static const Color textMuted =
+      Color(0xFF8F9BB3); // Light gray-blue placeholder text
 
   static const Color success = Color(0xFF4CAF50); // Playful green
   static const Color error = Color(0xFFE53E3E); // Bold comic red
@@ -48,9 +56,9 @@ class AppTheme {
 
   // ── Radius (Chunky, Playful, Bubbly) ───────────────────────────────────────
   static const double radiusSM = 8;
-  static const double radiusMD = 16;   // Bubbly Medium
-  static const double radiusLG = 24;   // Extra Chunky
-  static const double radiusXL = 32;   // Bubbly Large
+  static const double radiusMD = 16; // Bubbly Medium
+  static const double radiusLG = 24; // Extra Chunky
+  static const double radiusXL = 32; // Bubbly Large
   static const double radiusRound = 100;
 
   // ── Theme (Adapted for colorful light look) ────────────────────────────────
@@ -128,7 +136,8 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLG),
-          side: const BorderSide(color: cardBorder, width: 2), // Thick 2px border!
+          side: const BorderSide(
+              color: cardBorder, width: 2), // Thick 2px border!
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -145,7 +154,8 @@ class AppTheme {
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusLG),
-            side: const BorderSide(color: cardBorder, width: 2), // Thick 2px border!
+            side: const BorderSide(
+                color: cardBorder, width: 2), // Thick 2px border!
           ),
           elevation: 0,
         ),
@@ -153,7 +163,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: textPrimary,
-          side: const BorderSide(color: cardBorder, width: 2), // Thick 2px border!
+          side: const BorderSide(
+              color: cardBorder, width: 2), // Thick 2px border!
           textStyle: GoogleFonts.outfit(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -182,8 +193,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusMD),
           borderSide: const BorderSide(color: goldDark, width: 2.5),
         ),
-        labelStyle: GoogleFonts.inter(color: textSecondary, fontSize: 14, fontWeight: FontWeight.w600),
-        hintStyle: GoogleFonts.inter(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500),
+        labelStyle: GoogleFonts.inter(
+            color: textSecondary, fontSize: 14, fontWeight: FontWeight.w600),
+        hintStyle: GoogleFonts.inter(
+            color: textMuted, fontSize: 14, fontWeight: FontWeight.w500),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spaceMD,
           vertical: spaceMD,
@@ -191,7 +204,8 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: cardSurface,
-        contentTextStyle: GoogleFonts.inter(color: textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+        contentTextStyle: GoogleFonts.inter(
+            color: textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMD),
           side: const BorderSide(color: cardBorder, width: 2),
@@ -230,12 +244,13 @@ extension AppDecorations on BoxDecoration {
       color: color,
       borderRadius: BorderRadius.circular(radius),
       border: showBorder
-          ? Border.all(color: AppTheme.cardBorder, width: 2) // Thick 2px border!
+          ? Border.all(
+              color: AppTheme.cardBorder, width: 2) // Thick 2px border!
           : null,
       boxShadow: [
         // Bold flat 2D shadow (hand-drawn sticker feel)
         BoxShadow(
-          color: AppTheme.cardBorder.withOpacity(0.15),
+          color: AppTheme.cardBorder.withValues(alpha: 0.15),
           blurRadius: 0,
           offset: const Offset(4, 4),
         ),

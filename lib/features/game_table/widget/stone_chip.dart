@@ -77,8 +77,8 @@ class _SmallStoneChip extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? AppTheme.gold.withOpacity(0.5)
-                  : AppTheme.cardBorder.withOpacity(0.15),
+                  ? AppTheme.gold.withValues(alpha: 0.5)
+                  : AppTheme.cardBorder.withValues(alpha: 0.15),
               blurRadius: isSelected ? 8 : 0,
               spreadRadius: isSelected ? 1 : 0,
               offset: const Offset(2, 2),
@@ -126,8 +126,8 @@ class _BigStoneChip extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: isSelected
-                      ? AppTheme.gold.withOpacity(0.6)
-                      : AppTheme.cardBorder.withOpacity(0.18),
+                      ? AppTheme.gold.withValues(alpha: 0.6)
+                      : AppTheme.cardBorder.withValues(alpha: 0.18),
                   blurRadius: isSelected ? 12 : 0,
                   spreadRadius: isSelected ? 2 : 0,
                   offset: const Offset(3, 3),
@@ -144,12 +144,13 @@ class _BigStoneChip extends StatelessWidget {
                     width: 14,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.35),
-                      borderRadius: const BorderRadius.all(Radius.elliptical(7, 4)),
+                      color: Colors.white.withValues(alpha: 0.35),
+                      borderRadius:
+                          const BorderRadius.all(Radius.elliptical(7, 4)),
                     ),
                   ),
                 ),
-                
+
                 // Cute eyes and points
                 Center(
                   child: Column(

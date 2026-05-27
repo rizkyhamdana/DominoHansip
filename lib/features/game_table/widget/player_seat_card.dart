@@ -48,7 +48,7 @@ class PlayerSeatCard extends StatelessWidget {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             transform: isDraggingOver
-                ? (Matrix4.identity()..scale(1.05))
+                ? (Matrix4.identity()..scaleByDouble(1.05, 1.05, 1.05, 1))
                 : Matrix4.identity(),
             child: Stack(
               children: [
@@ -62,7 +62,7 @@ class PlayerSeatCard extends StatelessWidget {
                           color: AppTheme.teal,
                           width: 2,
                         ),
-                        color: AppTheme.teal.withOpacity(0.15),
+                        color: AppTheme.teal.withValues(alpha: 0.15),
                       ),
                     ),
                   ),
@@ -80,19 +80,19 @@ class PlayerSeatCard extends StatelessWidget {
     Color cardColor = AppTheme.cardSurface;
     Color borderAccentColor = AppTheme.cardBorder;
     double borderWidth = isCurrentTurn ? 3.0 : 1.5;
-    Color shadowColor = AppTheme.cardBorder.withOpacity(0.12);
+    Color shadowColor = AppTheme.cardBorder.withValues(alpha: 0.12);
     double shadowOffset = isCurrentTurn ? 4.0 : 2.0;
 
     if (isDistributor) {
-      cardColor = AppTheme.error.withOpacity(0.08);
+      cardColor = AppTheme.error.withValues(alpha: 0.08);
       borderAccentColor = AppTheme.error;
-      shadowColor = AppTheme.error.withOpacity(0.15);
+      shadowColor = AppTheme.error.withValues(alpha: 0.15);
     } else if (isCurrentTurn) {
-      cardColor = AppTheme.gold.withOpacity(0.1);
+      cardColor = AppTheme.gold.withValues(alpha: 0.1);
       borderAccentColor = AppTheme.goldDark;
-      shadowColor = AppTheme.goldDark.withOpacity(0.2);
+      shadowColor = AppTheme.goldDark.withValues(alpha: 0.2);
     } else if (isSelected) {
-      cardColor = AppTheme.gold.withOpacity(0.05);
+      cardColor = AppTheme.gold.withValues(alpha: 0.05);
       borderAccentColor = AppTheme.gold;
     }
 

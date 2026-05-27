@@ -124,8 +124,9 @@ class _RoundHistoryTileState extends State<RoundHistoryTile> {
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.gold.withOpacity(0.1),
-                      border: Border.all(color: AppTheme.gold.withOpacity(0.3)),
+                      color: AppTheme.gold.withValues(alpha: 0.1),
+                      border: Border.all(
+                          color: AppTheme.gold.withValues(alpha: 0.3)),
                     ),
                     child: Center(
                       child: Text(

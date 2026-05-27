@@ -115,7 +115,8 @@ class PlayerModel extends Equatable {
         crownCount: (json['crownCount'] as int?) ?? 0,
         totalReceivedStones: (json['totalReceivedStones'] as int?) ?? 0,
         totalDistributedStones: (json['totalDistributedStones'] as int?) ?? 0,
-        hadZeroStoneThisRound: (json['hadZeroStoneThisRound'] as bool?) ?? false,
+        hadZeroStoneThisRound:
+            (json['hadZeroStoneThisRound'] as bool?) ?? false,
       );
 
   @override

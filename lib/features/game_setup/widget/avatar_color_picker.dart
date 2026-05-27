@@ -20,15 +20,16 @@ class AvatarColorPicker extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: AppTheme.avatarColors.map((color) {
-        final isSelected = color.value == selectedColorValue;
+        final colorValue = color.toARGB32();
+        final isSelected = colorValue == selectedColorValue;
         final isDisabled =
-            disabledColorValues.contains(color.value) && !isSelected;
+            disabledColorValues.contains(colorValue) && !isSelected;
         return GestureDetector(
           onTap: isDisabled
               ? null
               : () {
                   HapticFeedback.lightImpact();
-                  onColorSelected(color.value);
+                  onColorSelected(colorValue);
                 },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
@@ -37,7 +38,7 @@ class AvatarColorPicker extends StatelessWidget {
             height: isSelected ? 28 : 24,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isDisabled ? color.withOpacity(0.25) : color,
+              color: isDisabled ? color.withValues(alpha: 0.25) : color,
               border: Border.all(
                 color: isDisabled ? AppTheme.textMuted : AppTheme.cardBorder,
                 width: 2.0,

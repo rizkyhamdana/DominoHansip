@@ -31,8 +31,7 @@ class EmptyStateView extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppTheme.cardSurface,
-                border:
-                    Border.all(color: AppTheme.cardBorder),
+                border: Border.all(color: AppTheme.cardBorder),
               ),
               child: Icon(
                 icon,

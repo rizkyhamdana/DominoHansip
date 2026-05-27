@@ -425,10 +425,14 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
     emit(state.copyWith(
       session: state.session.copyWith(
         phase: GamePhase.roundSettlement,
+        clearDistributor: true,
+        clearPendingPassed: true,
+        clearSelectedStone: true,
         clearSettlementPreview: true,
         clearError: true,
         clearSuccess: true,
       ),
+      isSelectingPassCauser: false,
     ));
   }
 
@@ -597,10 +601,12 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       msg += ' ${crownPlayer.name} keluar duluan.';
     }
 
+    final nextRoundNumber = session.roundHistory.length + 1;
+
     emit(state.copyWith(
       session: session.copyWith(
         players: resetPlayers,
-        currentRoundNumber: session.currentRoundNumber + 1,
+        currentRoundNumber: nextRoundNumber,
         phase: GamePhase.initialDraw,
         stockStones: stock,
         currentTurnPlayerId: startPlayerId,

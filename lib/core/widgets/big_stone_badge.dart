@@ -19,7 +19,7 @@ class BigStoneBadge extends StatelessWidget {
         border: Border.all(color: AppTheme.cardBorder, width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.cardBorder.withOpacity(0.18),
+            color: AppTheme.cardBorder.withValues(alpha: 0.18),
             blurRadius: 0,
             offset: const Offset(2, 2),
           ),

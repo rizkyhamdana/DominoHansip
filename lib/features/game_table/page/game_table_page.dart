@@ -230,7 +230,7 @@ class _TableBackground extends StatelessWidget {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.cardBorder.withOpacity(0.12),
+                color: AppTheme.cardBorder.withValues(alpha: 0.12),
               ),
             ),
             // Outer board outline
@@ -262,7 +262,7 @@ class _TableBackground extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppTheme.cardSurface.withOpacity(0.35),
+                  color: AppTheme.cardSurface.withValues(alpha: 0.35),
                   width: 3,
                 ),
               ),
@@ -273,9 +273,9 @@ class _TableBackground extends StatelessWidget {
               height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.background.withOpacity(0.15),
+                color: AppTheme.background.withValues(alpha: 0.15),
                 border: Border.all(
-                  color: AppTheme.cardSurface.withOpacity(0.2),
+                  color: AppTheme.cardSurface.withValues(alpha: 0.2),
                   width: 2,
                 ),
               ),
@@ -545,7 +545,7 @@ class _PassCauserOverlay extends StatelessWidget {
       onTap: () =>
           context.read<GameTableBloc>().add(const DismissPassCauserSelection()),
       child: Container(
-        color: AppTheme.cardBorder.withOpacity(0.4),
+        color: AppTheme.cardBorder.withValues(alpha: 0.4),
         child: Center(
           child: TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -576,7 +576,7 @@ class _PassCauserOverlay extends StatelessWidget {
                       //   - **Pass-Caused Distribution**: If a player passes, they tap the bottom "Pass" button which triggers the "Siapa yang bikin pass?" popup. Once selected, the causer's stone box appears in the center showing a target sticker (e.g. `👉 ke Budi`), allowing them to tap a stone to distribute instantly, or drag it exclusively to that target player.
                       // - **Big Stone lock**: Big Stone can only be distributed last (when no small stones remain)
                       decoration: BoxDecoration(
-                        color: AppTheme.gold.withOpacity(0.2),
+                        color: AppTheme.gold.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                         border:
                             Border.all(color: AppTheme.cardBorder, width: 2),
@@ -817,17 +817,17 @@ class _TopMessageBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.spaceMD, vertical: 12),
           decoration: BoxDecoration(
-            color: AppTheme.cardSurface.withOpacity(0.95),
+            color: AppTheme.cardSurface.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(color: color.withOpacity(0.4), width: 1),
+            border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 blurRadius: 16,
                 spreadRadius: 2,
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
