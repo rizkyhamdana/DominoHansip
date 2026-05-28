@@ -9,6 +9,8 @@ class GameActionModel extends Equatable {
   final String? fromPlayerId;
   final String? toPlayerId;
   final StoneType? stoneType;
+  final int? passLeftEnd;
+  final int? passRightEnd;
   final DateTime createdAt;
 
   const GameActionModel({
@@ -18,6 +20,8 @@ class GameActionModel extends Equatable {
     this.fromPlayerId,
     this.toPlayerId,
     this.stoneType,
+    this.passLeftEnd,
+    this.passRightEnd,
     required this.createdAt,
   });
 
@@ -28,6 +32,8 @@ class GameActionModel extends Equatable {
         'fromPlayerId': fromPlayerId,
         'toPlayerId': toPlayerId,
         'stoneType': stoneType?.toJson(),
+        'passLeftEnd': passLeftEnd,
+        'passRightEnd': passRightEnd,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -41,10 +47,21 @@ class GameActionModel extends Equatable {
         stoneType: json['stoneType'] != null
             ? StoneType.fromJson(json['stoneType'] as String)
             : null,
+        passLeftEnd: json['passLeftEnd'] as int?,
+        passRightEnd: json['passRightEnd'] as int?,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
   @override
-  List<Object?> get props =>
-      [id, type, description, fromPlayerId, toPlayerId, stoneType, createdAt];
+  List<Object?> get props => [
+        id,
+        type,
+        description,
+        fromPlayerId,
+        toPlayerId,
+        stoneType,
+        passLeftEnd,
+        passRightEnd,
+        createdAt,
+      ];
 }

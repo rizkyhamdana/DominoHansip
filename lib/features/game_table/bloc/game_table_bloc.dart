@@ -156,12 +156,16 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
     if (hasMoves) {
       emit(state.copyWith(
         session: session.copyWith(
-          errorMessage: 'Pemain memiliki kartu yang bisa dimainkan! Tidak boleh pass.',
+          errorMessage:
+              'Pemain memiliki kartu yang bisa dimainkan! Tidak boleh pass.',
           clearSuccess: true,
         ),
       ));
       return;
     }
+
+    final passLeftEnd = DominoEngine.getLeftEnd(session.dominoChain);
+    final passRightEnd = DominoEngine.getRightEnd(session.dominoChain);
 
     final newConsecutivePassCount = session.consecutivePassCount + 1;
 
@@ -179,13 +183,15 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
           minPips = pips;
           winnerId = p.id;
         }
-        
-        final tileStrings = hand.map((t) => '[${t.sideA}|${t.sideB}]').join(', ');
+
+        final tileStrings =
+            hand.map((t) => '[${t.sideA}|${t.sideB}]').join(', ');
         breakdownLines.add('${p.name}: $pips pip ($tileStrings)');
       }
 
       final winner = GameRuleUtils.getPlayerById(players, winnerId);
-      final String detailedBreakdown = 'Sisa kartu:\n${breakdownLines.join('\n')}';
+      final String detailedBreakdown =
+          'Sisa kartu:\n${breakdownLines.join('\n')}';
 
       final preview = GameRuleUtils.createSettlementPreview(
         players: players,
@@ -201,7 +207,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
           phase: GamePhase.roundSettlement,
           settlementPreview: preview,
           consecutivePassCount: newConsecutivePassCount,
-          successMessage: 'Game Buntu! Semua pemain pass berturut-turut. ${winner.name} menang dengan sisa kartu terkecil ($minPips pip)!\n\n$detailedBreakdown',
+          successMessage:
+              'Game Buntu! Semua pemain pass berturut-turut. ${winner.name} menang dengan sisa kartu terkecil ($minPips pip)!\n\n$detailedBreakdown',
           clearError: true,
         ),
         isSelectingPassCauser: false,
@@ -249,6 +256,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         description: finalMessage,
         toPlayerId: player.id,
         stoneType: stone,
+        passLeftEnd: passLeftEnd,
+        passRightEnd: passRightEnd,
         createdAt: DateTime.now(),
       );
 
@@ -284,7 +293,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       if (causerId == null) {
         // Fallback: player before the passer in players list
         final idx = players.indexWhere((p) => p.id == event.playerId);
-        final prevIdx = idx == -1 ? 0 : (idx - 1 + players.length) % players.length;
+        final prevIdx =
+            idx == -1 ? 0 : (idx - 1 + players.length) % players.length;
         causerId = players[prevIdx].id;
       }
 
@@ -307,7 +317,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
           totalReceivedStones: player.totalReceivedStones + 1,
           passCount: player.passCount + 1,
         );
-        msg = '${causer.name} membagi Batu Kecil ke ${player.name} (stok habis & pass).';
+        msg =
+            '${causer.name} membagi Batu Kecil ke ${player.name} (stok habis & pass).';
       } else if (causer.hasBigStone) {
         // Distribute big stone
         distributedStone = StoneType.big;
@@ -320,7 +331,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
           totalReceivedStones: player.totalReceivedStones + 1,
           passCount: player.passCount + 1,
         );
-        msg = '${causer.name} membagi Batu Besar ke ${player.name} (stok habis & pass).';
+        msg =
+            '${causer.name} membagi Batu Besar ke ${player.name} (stok habis & pass).';
       } else {
         // Causer has no stones! Normal pass without distribution
         distributedStone = null;
@@ -328,7 +340,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         updatedPasser = player.copyWith(
           passCount: player.passCount + 1,
         );
-        msg = '${player.name} pass (stok habis & ${causer.name} tidak memiliki batu).';
+        msg =
+            '${player.name} pass (stok habis & ${causer.name} tidak memiliki batu).';
       }
 
       final bool causerIsEmpty = updatedCauser.totalStoneCount == 0;
@@ -337,7 +350,9 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
 
       if (causerIsEmpty && distributedStone != null) {
         finalPlayers = players.map((p) {
-          if (p.id == causerId) return updatedCauser.copyWith(hadZeroStoneThisRound: true);
+          if (p.id == causerId) {
+            return updatedCauser.copyWith(hadZeroStoneThisRound: true);
+          }
           if (p.id == event.playerId) return updatedPasser;
           return p;
         }).toList();
@@ -355,11 +370,15 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         id: _uuid.v4(),
         type: distributedStone == null
             ? 'pass_no_stone_to_distribute'
-            : (distributedStone == StoneType.big ? 'distribute_big' : 'distribute_small'),
+            : (distributedStone == StoneType.big
+                ? 'distribute_big'
+                : 'distribute_small'),
         description: finalMsg,
         fromPlayerId: distributedStone == null ? null : causerId,
         toPlayerId: event.playerId,
         stoneType: distributedStone,
+        passLeftEnd: passLeftEnd,
+        passRightEnd: passRightEnd,
         createdAt: DateTime.now(),
       );
 
@@ -780,7 +799,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
     final session = state.session;
 
     // Check if Kades was newly crowned/changed in the last round
-    final lastRound = session.roundHistory.isNotEmpty ? session.roundHistory.last : null;
+    final lastRound =
+        session.roundHistory.isNotEmpty ? session.roundHistory.last : null;
     final bool isNewKadesCrowned = lastRound != null &&
         lastRound.crownHolderAfterRound != null &&
         lastRound.crownHolderBeforeRound != lastRound.crownHolderAfterRound;
@@ -985,7 +1005,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       return;
     }
 
-    final hand = List<DominoTileModel>.from(session.playerHands[event.playerId] ?? const []);
+    final hand = List<DominoTileModel>.from(
+        session.playerHands[event.playerId] ?? const []);
     if (!hand.contains(event.tile)) {
       emit(state.copyWith(
         session: session.copyWith(
@@ -1025,10 +1046,12 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       chain.add(placedTile);
     }
 
-    final updatedHands = Map<String, List<DominoTileModel>>.from(session.playerHands);
+    final updatedHands =
+        Map<String, List<DominoTileModel>>.from(session.playerHands);
     updatedHands[event.playerId] = hand;
 
-    final String actionMsg = '${activePlayer.name} menaruh [${event.tile.sideA}|${event.tile.sideB}] di ${event.side == 'left' ? 'kiri' : 'kanan'}.';
+    final String actionMsg =
+        '${activePlayer.name} menaruh [${event.tile.sideA}|${event.tile.sideB}] di ${event.side == 'left' ? 'kiri' : 'kanan'}.';
     final action = GameActionModel(
       id: _uuid.v4(),
       type: 'play_tile',
@@ -1066,7 +1089,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
     }
 
     // Advance turn to next player
-    final nextPlayerId = _nextPlayerIdAfter(event.playerId, players) ?? players.first.id;
+    final nextPlayerId =
+        _nextPlayerIdAfter(event.playerId, players) ?? players.first.id;
 
     emit(state.copyWith(
       session: session.copyWith(
@@ -1108,12 +1132,14 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       // Game 1 (no Kades, no history): starting player holds the highest double (6-6)!
       startingPlayerId = DominoEngine.findStartingPlayer(hands);
     }
-    final startPlayer = session.players.firstWhere((p) => p.id == startingPlayerId);
+    final startPlayer =
+        session.players.firstWhere((p) => p.id == startingPlayerId);
 
     final isBotStarting = session.isBot(startingPlayerId);
     if (isBotStarting) {
       // Bot starts: auto-play its starting tile
-      final startingTile = DominoEngine.findStartingTile(hands[startingPlayerId]!);
+      final startingTile =
+          DominoEngine.findStartingTile(hands[startingPlayerId]!);
       final dominoChain = [startingTile];
 
       final updatedHands = Map<String, List<DominoTileModel>>.from(hands);
@@ -1121,10 +1147,14 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       updatedHand.remove(startingTile);
       updatedHands[startingPlayerId] = updatedHand;
 
-      final firstActivePlayerId = _nextPlayerIdAfter(startingPlayerId, session.players) ?? session.players.first.id;
-      final firstActivePlayerName = session.players.firstWhere((p) => p.id == firstActivePlayerId).name;
+      final firstActivePlayerId =
+          _nextPlayerIdAfter(startingPlayerId, session.players) ??
+              session.players.first.id;
+      final firstActivePlayerName =
+          session.players.firstWhere((p) => p.id == firstActivePlayerId).name;
 
-      final String actionMsg = '${startPlayer.name} menaruh [${startingTile.sideA}|${startingTile.sideB}] sebagai kartu pertama.';
+      final String actionMsg =
+          '${startPlayer.name} menaruh [${startingTile.sideA}|${startingTile.sideB}] sebagai kartu pertama.';
       final action = GameActionModel(
         id: _uuid.v4(),
         type: 'play_tile',
@@ -1139,7 +1169,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         currentTurnPlayerId: firstActivePlayerId,
         consecutivePassCount: 0,
         phase: GamePhase.playing,
-        successMessage: '${startPlayer.name} memulai dengan [${startingTile.sideA}|${startingTile.sideB}]. Giliran $firstActivePlayerName.',
+        successMessage:
+            '${startPlayer.name} memulai dengan [${startingTile.sideA}|${startingTile.sideB}]. Giliran $firstActivePlayerName.',
         actionLog: [...session.actionLog, action],
       );
     } else {
@@ -1150,7 +1181,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         currentTurnPlayerId: startingPlayerId,
         consecutivePassCount: 0,
         phase: GamePhase.playing,
-        successMessage: 'Anda berhak jalan pertama! Silakan pilih kartu pertama Anda dari dek.',
+        successMessage:
+            'Anda berhak jalan pertama! Silakan pilih kartu pertama Anda dari dek.',
       );
     }
   }
@@ -1203,11 +1235,13 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
 
     final Duration delay;
     if (action == BotTurnAction.pass) {
-      delay = const Duration(milliseconds: 2200); // Clearer notice of passes and stone draws
+      delay = const Duration(
+          milliseconds: 2200); // Clearer notice of passes and stone draws
     } else if (action == BotTurnAction.playDomino) {
       delay = const Duration(milliseconds: 1800); // Natural play thinking time
     } else {
-      delay = const Duration(milliseconds: 1600); // Natural distribution or causer selection speed
+      delay = const Duration(
+          milliseconds: 1600); // Natural distribution or causer selection speed
     }
 
     Future.delayed(delay, () {
@@ -1227,9 +1261,16 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       switch (latestAction) {
         case BotTurnAction.playDomino:
           final botHand = latest.session.playerHands[latestBotId] ?? const [];
+          final opponentTileCounts = {
+            for (final player in latest.session.players)
+              player.id: latest.session.playerHands[player.id]?.length ?? 0,
+          };
           final decision = DominoEngine.decideBotPlay(
             hand: botHand,
             chain: latest.session.dominoChain,
+            botId: latestBotId,
+            opponentTileCounts: opponentTileCounts,
+            actionLog: latest.session.actionLog,
           );
           if (decision != null) {
             add(PlayDominoTile(
