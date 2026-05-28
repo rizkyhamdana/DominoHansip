@@ -106,12 +106,16 @@ class _InfoTile extends StatelessWidget {
             children: [
               icon,
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  color: AppTheme.textMuted,
-                  fontSize: 10,
-                  letterSpacing: 0.5,
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textMuted,
+                    fontSize: 10,
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

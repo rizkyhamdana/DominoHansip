@@ -207,16 +207,6 @@ class PlayerSeatCard extends StatelessWidget {
               fontSize: 10,
             ),
           ),
-
-          // Pass count (show if > 0)
-          if (player.passCount > 0)
-            Text(
-              'Pass: ${player.passCount}',
-              style: GoogleFonts.inter(
-                color: AppTheme.textMuted,
-                fontSize: 9,
-              ),
-            ),
         ],
       ),
     );
