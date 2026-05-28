@@ -15,6 +15,7 @@ import 'package:crownpass/features/game_table/bloc/game_table_bloc.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_event.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
 import 'package:crownpass/features/round_settlement/widget/settlement_summary_card.dart';
+import 'package:crownpass/core/services/audio_service.dart';
 
 class RoundSettlementPage extends StatelessWidget {
   const RoundSettlementPage({super.key});
@@ -39,6 +40,8 @@ class RoundSettlementPage extends StatelessWidget {
             if (didPop) {
               context.read<GameTableBloc>().add(const CancelRoundSettlement());
             } else {
+              // Going back to home — pause music
+              AudioService.instance.pause();
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 AppRouter.home,
@@ -622,6 +625,8 @@ class _RoundFinishedView extends StatelessWidget {
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
+                  // Pause music when returning to home
+                  AudioService.instance.pause();
                   Navigator.pushNamedAndRemoveUntil(
                       context, AppRouter.home, (r) => false);
                 },

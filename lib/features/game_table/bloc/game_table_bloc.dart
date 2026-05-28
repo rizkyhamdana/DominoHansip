@@ -11,6 +11,7 @@ import 'package:crownpass/core/utils/game_rule_utils.dart';
 import 'package:crownpass/core/utils/domino_engine.dart';
 import 'package:crownpass/data/models/domino_tile_model.dart';
 import 'package:crownpass/core/constants/app_constants.dart';
+import 'package:crownpass/core/services/audio_service.dart';
 import 'game_table_event.dart';
 import 'game_table_state.dart';
 
@@ -1273,6 +1274,8 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
             actionLog: latest.session.actionLog,
           );
           if (decision != null) {
+            // Play tile placement SFX for bot
+            AudioService.instance.playSfx('tile_place');
             add(PlayDominoTile(
               playerId: latestBotId,
               tile: decision['tile'] as DominoTileModel,
@@ -1281,6 +1284,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
           }
 
         case BotTurnAction.pass:
+          AudioService.instance.playSfx('pass');
           add(PlayerPass(latestBotId));
 
         case BotTurnAction.selectCauser:

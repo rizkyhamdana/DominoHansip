@@ -21,6 +21,7 @@ import 'package:crownpass/features/game_table/widget/stock_pile_widget.dart';
 import 'package:crownpass/features/game_table/widget/domino_chain_view.dart';
 import 'package:crownpass/features/game_table/widget/player_hand_deck.dart';
 import 'package:crownpass/core/utils/domino_engine.dart';
+import 'package:crownpass/core/services/audio_service.dart';
 
 class GameTablePage extends StatefulWidget {
   const GameTablePage({super.key});
@@ -37,6 +38,9 @@ class _GameTablePageState extends State<GameTablePage> {
     super.initState();
     // Hide system overlays for immersive gameplay experience
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    // Start background music
+    AudioService.instance.play();
 
     // Resume bot turns if continuing a persisted state where it is a bot's turn!
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -58,6 +62,8 @@ class _GameTablePageState extends State<GameTablePage> {
   void dispose() {
     // Restore normal system UI bars
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // NOTE: Music intentionally NOT paused here — continues across game screens.
+    // Music is paused only when navigating back to home.
     super.dispose();
   }
 
@@ -96,6 +102,8 @@ class _GameTablePageState extends State<GameTablePage> {
         if (session.phase == GamePhase.roundSettlement &&
             !_hasPushedSettlement) {
           _hasPushedSettlement = true;
+          // Play round end SFX
+          AudioService.instance.playSfx('round_end');
           Navigator.pushNamed(context, AppRouter.roundSettlement);
         }
 
@@ -202,6 +210,8 @@ class _GameTablePageState extends State<GameTablePage> {
                                 canPlayNow: canHumanPlayNow,
                                 onPlay: (tile, side) {
                                   if (!canHumanPlayNow()) return;
+                                  // Play tile placement SFX
+                                  AudioService.instance.playSfx('tile_place');
                                   context
                                       .read<GameTableBloc>()
                                       .add(PlayDominoTile(
@@ -266,7 +276,7 @@ class _GameTablePageState extends State<GameTablePage> {
     if (state.isHapticEnabled) {
       HapticFeedback.lightImpact();
     }
-
+    AudioService.instance.playSfx('pass');
     context.read<GameTableBloc>().add(PlayerPass(playerId));
   }
 
@@ -623,7 +633,7 @@ class _CircularTable extends StatelessWidget {
               top: center.dy -
                   (showTray ? 85 : (state.session.stockCount > 0 ? 55 : 45)) +
                   (session.isVsMode && state.session.stockCount > 0
-                      ? 110.0
+                      ? 70.0
                       : 0.0),
               child: (state.session.stockCount > 0)
                   ? StockPileWidget(
@@ -645,6 +655,7 @@ class _CircularTable extends StatelessWidget {
                           if (state.isHapticEnabled) {
                             HapticFeedback.lightImpact();
                           }
+                          AudioService.instance.playSfx('pass');
                           context
                               .read<GameTableBloc>()
                               .add(PlayerPass(playerId));
@@ -719,8 +730,24 @@ class _CircularTable extends StatelessWidget {
                 angle = (-math.pi / 2) + (2 * math.pi * i / n);
               }
 
-              final x = center.dx + radius * math.cos(angle) - cardHalfW;
-              final y = center.dy + radius * math.sin(angle) - cardHalfH;
+              // VS mode: manual per-seat fine-tuning offsets
+              double extraDx = 0.0;
+              double extraDy = 0.0;
+              if (session.isVsMode) {
+                if (i == 0) {
+                  // Alpha (left) — geser lebih ke kiri
+                  extraDx = -20.0;
+                } else if (i == 1) {
+                  // Beta (top) — turun sedikit ke bawah
+                  extraDy = 24.0;
+                } else if (i == 2) {
+                  // Gamma (right) — geser lebih ke kanan
+                  extraDx = 20.0;
+                }
+              }
+
+              final x = center.dx + radius * math.cos(angle) - cardHalfW + extraDx;
+              final y = center.dy + radius * math.sin(angle) - cardHalfH + extraDy;
 
               final player = displayPlayers[i];
               final isDistributor = distributorId == player.id;
@@ -1053,9 +1080,17 @@ class _PassCauserOverlay extends StatelessWidget {
 
 // ── Game menu ─────────────────────────────────────────────────────────────────
 
-class _GameMenu extends StatelessWidget {
+class _GameMenu extends StatefulWidget {
   final GameTableState state;
   const _GameMenu({required this.state});
+
+  @override
+  State<_GameMenu> createState() => _GameMenuState();
+}
+
+class _GameMenuState extends State<_GameMenu> {
+  bool _isMusicMuted = AudioService.instance.isMusicMuted;
+  bool _isSfxMuted = AudioService.instance.isSfxMuted;
 
   @override
   Widget build(BuildContext context) {
@@ -1070,6 +1105,31 @@ class _GameMenu extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: AppTheme.spaceLG),
+
+          // Music toggle
+          _MenuTile(
+            icon: _isMusicMuted
+                ? Icons.music_off_rounded
+                : Icons.music_note_rounded,
+            label: _isMusicMuted ? 'Musik: Mati' : 'Musik: Aktif',
+            onTap: () async {
+              final newMuted = await AudioService.instance.toggleMusic();
+              if (mounted) setState(() => _isMusicMuted = newMuted);
+            },
+          ),
+
+          // SFX toggle
+          _MenuTile(
+            icon: _isSfxMuted
+                ? Icons.volume_off_rounded
+                : Icons.volume_up_rounded,
+            label: _isSfxMuted ? 'Efek Suara: Mati' : 'Efek Suara: Aktif',
+            onTap: () {
+              final newMuted = AudioService.instance.toggleSfx();
+              if (mounted) setState(() => _isSfxMuted = newMuted);
+            },
+          ),
+
           _MenuTile(
             icon: Icons.history_rounded,
             label: 'Riwayat Game',
@@ -1092,6 +1152,8 @@ class _GameMenu extends StatelessWidget {
             label: 'Kembali ke Beranda',
             onTap: () {
               Navigator.pop(context);
+              // Pause music when going back to home
+              AudioService.instance.pause();
               Navigator.pushNamedAndRemoveUntil(
                   context, AppRouter.home, (r) => false);
             },

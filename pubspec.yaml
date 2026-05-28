@@ -22,6 +22,9 @@ dependencies:
   # UI
   google_fonts: ^6.2.1
 
+  # Audio
+  audioplayers: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -31,3 +34,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/app_logo.png
+    - assets/audio/
