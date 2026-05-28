@@ -30,7 +30,8 @@ class GameTablePage extends StatefulWidget {
   State<GameTablePage> createState() => _GameTablePageState();
 }
 
-class _GameTablePageState extends State<GameTablePage> with WidgetsBindingObserver {
+class _GameTablePageState extends State<GameTablePage>
+    with WidgetsBindingObserver {
   bool _hasPushedSettlement = false;
 
   @override
@@ -71,7 +72,8 @@ class _GameTablePageState extends State<GameTablePage> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       // Pause music when app is minimized or goes to background
       AudioService.instance.pause();
     } else if (state == AppLifecycleState.resumed) {
@@ -654,7 +656,7 @@ class _CircularTable extends StatelessWidget {
               top: center.dy -
                   (showTray ? 85 : (state.session.stockCount > 0 ? 55 : 45)) +
                   (session.isVsMode && state.session.stockCount > 0
-                      ? 70.0
+                      ? 50.0
                       : 0.0),
               child: (state.session.stockCount > 0)
                   ? StockPileWidget(
@@ -767,8 +769,10 @@ class _CircularTable extends StatelessWidget {
                 }
               }
 
-              final x = center.dx + radius * math.cos(angle) - cardHalfW + extraDx;
-              final y = center.dy + radius * math.sin(angle) - cardHalfH + extraDy;
+              final x =
+                  center.dx + radius * math.cos(angle) - cardHalfW + extraDx;
+              final y =
+                  center.dy + radius * math.sin(angle) - cardHalfH + extraDy;
 
               final player = displayPlayers[i];
               final isDistributor = distributorId == player.id;
