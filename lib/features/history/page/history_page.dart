@@ -11,6 +11,8 @@ import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/data/models/round_result_model.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_bloc.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_bloc.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_state.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -18,27 +20,51 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Riwayat Game')),
+      appBar: AppBar(
+        title: const Text('Riwayat Game'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: BlocBuilder<GameTableBloc, GameTableState>(
-        builder: (context, state) {
-          final history = state.session.roundHistory;
-          final players = state.session.players;
+        builder: (context, vsState) {
+          return BlocBuilder<SimTableBloc, SimTableState>(
+            builder: (context, simState) {
+              final vsHistory = vsState.session.roundHistory;
+              final simHistory = simState.session.roundHistory;
 
-          if (history.isEmpty) {
-            return const EmptyStateView(
-              title: 'Belum ada riwayat',
-              subtitle: 'Selesaikan minimal 1 game untuk melihat riwayat.',
-              icon: Icons.history_rounded,
-            );
-          }
+              final combinedHistory = [...vsHistory, ...simHistory];
+              combinedHistory.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(AppTheme.spaceMD),
-            itemCount: history.length,
-            itemBuilder: (context, index) {
-              // Show newest first
-              final result = history[history.length - 1 - index];
-              return RoundHistoryTile(result: result, players: players);
+              final vsPlayers = vsState.session.players;
+              final simPlayers = simState.session.players;
+              // Combine players list, ensuring unique IDs
+              final Map<String, PlayerModel> playerMap = {};
+              for (final p in vsPlayers) {
+                playerMap[p.id] = p;
+              }
+              for (final p in simPlayers) {
+                playerMap[p.id] = p;
+              }
+              final players = playerMap.values.toList();
+
+              if (combinedHistory.isEmpty) {
+                return const EmptyStateView(
+                  title: 'Belum ada riwayat',
+                  subtitle: 'Selesaikan minimal 1 game untuk melihat riwayat.',
+                  icon: Icons.history_rounded,
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(AppTheme.spaceMD),
+                itemCount: combinedHistory.length,
+                itemBuilder: (context, index) {
+                  final result = combinedHistory[index];
+                  return RoundHistoryTile(result: result, players: players);
+                },
+              );
             },
           );
         },

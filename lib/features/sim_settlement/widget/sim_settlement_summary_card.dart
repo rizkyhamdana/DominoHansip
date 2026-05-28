@@ -6,12 +6,12 @@ import 'package:crownpass/core/widgets/crown_badge.dart';
 import 'package:crownpass/core/widgets/hansip_badge.dart';
 import 'package:crownpass/core/widgets/player_avatar.dart';
 import 'package:crownpass/data/models/player_model.dart';
-import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_state.dart';
 
-class SettlementSummaryCard extends StatelessWidget {
-  final GameTableState state;
+class SimSettlementSummaryCard extends StatelessWidget {
+  final SimTableState state;
 
-  const SettlementSummaryCard({super.key, required this.state});
+  const SimSettlementSummaryCard({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {

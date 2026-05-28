@@ -10,8 +10,8 @@ class AppConstants {
 
   // Microcopy
   static const String appName = 'Domino Hansip';
-  static const String appTagline = 'Asisten hitung batu, pass, dan ronde.';
-  static const String appSubtitle = 'Catat skor domino tanpa ribet.';
+  static const String appTagline = 'Main Domino Hansip Tradisional dengan AI & Simulasi.';
+  static const String appSubtitle = 'Main vs Bot AI & Simulasi Mandiri';
 
   static const String noCrownHolder = 'Belum ada Kepala Desa';
   static const String noHansip = 'Belum ada Hansip';

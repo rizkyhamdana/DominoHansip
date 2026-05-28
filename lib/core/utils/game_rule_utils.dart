@@ -118,31 +118,74 @@ class GameRuleUtils {
 
   /// Builds a dry-run preview of what will happen after settlement.
   /// Does NOT modify any state permanently.
+  ///
+  /// Rule: the player seated immediately BEFORE the winner in turn order
+  /// receives 1 bonus stone:
+  ///   • If stock is non-empty → take the top stone from the stock.
+  ///   • If stock is empty     → take a small stone from the winner
+  ///                             (or big stone if winner has no small stones).
   static SettlementPreviewModel createSettlementPreview({
     required List<PlayerModel> players,
     required String winnerPlayerId,
     required String? currentCrownPlayerId,
+    required String? currentHansipPlayerId,
+    required List<StoneType> stockStones,
     bool isStockEmpty = true,
   }) {
-    // 1. Keep previous-player ID for older saved result shape.
+    // 1. Identify the previous player (seated just before the winner).
     final prevPlayer = getPreviousPlayer(players, winnerPlayerId);
 
-    // 2. Settlement no longer gives an extra stone to any player.
-    final playersAfterSettlement = List<PlayerModel>.from(players);
+    // 2. Apply bonus stone transfer (prev player gets 1 stone).
+    List<StoneType> updatedStock = List<StoneType>.from(stockStones);
+    List<PlayerModel> playersAfterSettlement = List<PlayerModel>.from(players);
 
-    // 3. Determine Hansip from updated point totals.
-    final List<String> tiePlayers = isStockEmpty
-        ? getHansipTiePlayers(playersAfterSettlement)
-        : const [];
-    final suggestedHansip = tiePlayers.length == 1 ? tiePlayers.first : null;
+    // Helper: update a player in the list by id.
+    PlayerModel updatePlayer(String id, PlayerModel Function(PlayerModel) fn) {
+      final idx = playersAfterSettlement.indexWhere((p) => p.id == id);
+      if (idx == -1) return playersAfterSettlement.first;
+      final updated = fn(playersAfterSettlement[idx]);
+      playersAfterSettlement[idx] = updated;
+      return updated;
+    }
 
-    // 4. Determine Crown.
+    if (updatedStock.isNotEmpty) {
+      // Take the top stone from the stock → give to previous player.
+      final stone = updatedStock.removeAt(0);
+      updatePlayer(prevPlayer.id, (p) {
+        if (stone == StoneType.big) {
+          return p.copyWith(hasBigStone: true);
+        } else {
+          return p.copyWith(smallStoneCount: p.smallStoneCount + 1);
+        }
+      });
+    } else {
+      // Stock empty → take a small stone from winner (or big stone if none).
+      final winner = getPlayerById(playersAfterSettlement, winnerPlayerId);
+      if (winner.smallStoneCount > 0) {
+        updatePlayer(winnerPlayerId, (p) => p.copyWith(smallStoneCount: p.smallStoneCount - 1));
+        updatePlayer(prevPlayer.id, (p) => p.copyWith(smallStoneCount: p.smallStoneCount + 1));
+      } else if (winner.hasBigStone) {
+        updatePlayer(winnerPlayerId, (p) => p.copyWith(hasBigStone: false));
+        updatePlayer(prevPlayer.id, (p) => p.copyWith(hasBigStone: true));
+      }
+      // If winner has no stones at all, no transfer happens.
+    }
+
+    // 3. Determine Crown.
     final winnerAfterSettlement =
         getPlayerById(playersAfterSettlement, winnerPlayerId);
     final willCrownMove =
         isStockEmpty && canWinnerReceiveCrownAfterSettlement(winnerAfterSettlement);
     final nextCrownPlayerId =
         willCrownMove ? winnerPlayerId : currentCrownPlayerId;
+
+    // 4. Determine Hansip from updated point totals only when a Kades is established (willCrownMove is true).
+    final List<String> tiePlayers = willCrownMove
+        ? getHansipTiePlayers(playersAfterSettlement)
+        : (currentHansipPlayerId != null ? [currentHansipPlayerId] : const []);
+    final suggestedHansip = willCrownMove
+        ? (tiePlayers.length == 1 ? tiePlayers.first : null)
+        : currentHansipPlayerId;
 
     return SettlementPreviewModel(
       winnerPlayerId: winnerPlayerId,
@@ -152,6 +195,7 @@ class GameRuleUtils {
       suggestedHansipPlayerId: suggestedHansip,
       willCrownMove: willCrownMove,
       nextCrownPlayerId: nextCrownPlayerId,
+      stockStonesAfterSettlement: updatedStock,
     );
   }
 

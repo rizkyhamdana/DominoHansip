@@ -1,48 +1,37 @@
 import 'package:equatable/equatable.dart';
 
 import 'package:crownpass/data/models/player_model.dart';
-import 'package:crownpass/data/models/domino_tile_model.dart';
 
-abstract class GameTableEvent extends Equatable {
-  const GameTableEvent();
+abstract class SimTableEvent extends Equatable {
+  const SimTableEvent();
 
   @override
   List<Object?> get props => [];
 }
 
-class InitializeGame extends GameTableEvent {
+class InitializeGame extends SimTableEvent {
   final List<PlayerModel> players;
   final int totalStones;
   final bool isDragEnabled;
   final bool isHapticEnabled;
-  final bool isVsMode;
-  final List<String> botPlayerIds;
 
   const InitializeGame({
     required this.players,
     required this.totalStones,
     this.isDragEnabled = true,
     this.isHapticEnabled = true,
-    this.isVsMode = false,
-    this.botPlayerIds = const [],
   });
 
   @override
-  List<Object?> get props => [
-        players,
-        totalStones,
-        isDragEnabled,
-        isHapticEnabled,
-        isVsMode,
-        botPlayerIds
-      ];
+  List<Object?> get props =>
+      [players, totalStones, isDragEnabled, isHapticEnabled];
 }
 
-class StartRound extends GameTableEvent {
+class StartRound extends SimTableEvent {
   const StartRound();
 }
 
-class SelectCurrentPlayer extends GameTableEvent {
+class SelectCurrentPlayer extends SimTableEvent {
   final String playerId;
   const SelectCurrentPlayer(this.playerId);
 
@@ -50,7 +39,7 @@ class SelectCurrentPlayer extends GameTableEvent {
   List<Object?> get props => [playerId];
 }
 
-class PlayerPass extends GameTableEvent {
+class PlayerPass extends SimTableEvent {
   final String playerId;
   const PlayerPass(this.playerId);
 
@@ -58,7 +47,7 @@ class PlayerPass extends GameTableEvent {
   List<Object?> get props => [playerId];
 }
 
-class SelectPassCauser extends GameTableEvent {
+class SelectPassCauser extends SimTableEvent {
   final String causerPlayerId;
   const SelectPassCauser(this.causerPlayerId);
 
@@ -66,7 +55,7 @@ class SelectPassCauser extends GameTableEvent {
   List<Object?> get props => [causerPlayerId];
 }
 
-class SelectStoneForDistribution extends GameTableEvent {
+class SelectStoneForDistribution extends SimTableEvent {
   final StoneType stoneType;
   const SelectStoneForDistribution(this.stoneType);
 
@@ -74,7 +63,7 @@ class SelectStoneForDistribution extends GameTableEvent {
   List<Object?> get props => [stoneType];
 }
 
-class DistributeSmallStone extends GameTableEvent {
+class DistributeSmallStone extends SimTableEvent {
   final String fromPlayerId;
   final String toPlayerId;
   const DistributeSmallStone({
@@ -86,7 +75,7 @@ class DistributeSmallStone extends GameTableEvent {
   List<Object?> get props => [fromPlayerId, toPlayerId];
 }
 
-class DistributeBigStone extends GameTableEvent {
+class DistributeBigStone extends SimTableEvent {
   final String fromPlayerId;
   final String toPlayerId;
   const DistributeBigStone({
@@ -98,7 +87,7 @@ class DistributeBigStone extends GameTableEvent {
   List<Object?> get props => [fromPlayerId, toPlayerId];
 }
 
-class DropStoneToPlayer extends GameTableEvent {
+class DropStoneToPlayer extends SimTableEvent {
   final String fromPlayerId;
   final String toPlayerId;
   final StoneType stoneType;
@@ -112,11 +101,11 @@ class DropStoneToPlayer extends GameTableEvent {
   List<Object?> get props => [fromPlayerId, toPlayerId, stoneType];
 }
 
-class OpenRoundSettlement extends GameTableEvent {
+class OpenRoundSettlement extends SimTableEvent {
   const OpenRoundSettlement();
 }
 
-class SelectRoundWinner extends GameTableEvent {
+class SelectRoundWinner extends SimTableEvent {
   final String winnerPlayerId;
   const SelectRoundWinner(this.winnerPlayerId);
 
@@ -124,11 +113,11 @@ class SelectRoundWinner extends GameTableEvent {
   List<Object?> get props => [winnerPlayerId];
 }
 
-class ConfirmSettlement extends GameTableEvent {
+class ConfirmSettlement extends SimTableEvent {
   const ConfirmSettlement();
 }
 
-class ResolveHansipTie extends GameTableEvent {
+class ResolveHansipTie extends SimTableEvent {
   final String selectedPlayerId;
   const ResolveHansipTie(this.selectedPlayerId);
 
@@ -136,50 +125,30 @@ class ResolveHansipTie extends GameTableEvent {
   List<Object?> get props => [selectedPlayerId];
 }
 
-class StartNextRound extends GameTableEvent {
+class StartNextRound extends SimTableEvent {
   const StartNextRound();
 }
 
-class UndoLastAction extends GameTableEvent {
+class UndoLastAction extends SimTableEvent {
   const UndoLastAction();
 }
 
-class ResetRound extends GameTableEvent {
+class ResetRound extends SimTableEvent {
   const ResetRound();
 }
 
-class ResetGame extends GameTableEvent {
+class ResetGame extends SimTableEvent {
   const ResetGame();
 }
 
-class ClearMessage extends GameTableEvent {
+class ClearMessage extends SimTableEvent {
   const ClearMessage();
 }
 
-class DismissPassCauserSelection extends GameTableEvent {
+class DismissPassCauserSelection extends SimTableEvent {
   const DismissPassCauserSelection();
 }
 
-class CancelRoundSettlement extends GameTableEvent {
+class CancelRoundSettlement extends SimTableEvent {
   const CancelRoundSettlement();
 }
-
-class PlayDominoTile extends GameTableEvent {
-  final String playerId;
-  final DominoTileModel tile;
-  final String side; // 'left' or 'right'
-
-  const PlayDominoTile({
-    required this.playerId,
-    required this.tile,
-    required this.side,
-  });
-
-  @override
-  List<Object?> get props => [playerId, tile, side];
-}
-
-class ResumeGameSession extends GameTableEvent {
-  const ResumeGameSession();
-}
-

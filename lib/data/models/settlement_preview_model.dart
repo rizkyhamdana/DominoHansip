@@ -10,6 +10,8 @@ class SettlementPreviewModel extends Equatable {
   final String? suggestedHansipPlayerId;
   final bool willCrownMove;
   final String? nextCrownPlayerId;
+  /// Updated stock list after the bonus stone was transferred to the previous player.
+  final List<StoneType> stockStonesAfterSettlement;
 
   const SettlementPreviewModel({
     required this.winnerPlayerId,
@@ -19,6 +21,7 @@ class SettlementPreviewModel extends Equatable {
     this.suggestedHansipPlayerId,
     required this.willCrownMove,
     this.nextCrownPlayerId,
+    this.stockStonesAfterSettlement = const [],
   });
 
   bool get hasHansipTie => hansipTiePlayerIds.length > 1;
@@ -31,6 +34,7 @@ class SettlementPreviewModel extends Equatable {
     String? suggestedHansipPlayerId,
     bool? willCrownMove,
     String? nextCrownPlayerId,
+    List<StoneType>? stockStonesAfterSettlement,
   }) {
     return SettlementPreviewModel(
       winnerPlayerId: winnerPlayerId ?? this.winnerPlayerId,
@@ -43,6 +47,8 @@ class SettlementPreviewModel extends Equatable {
           suggestedHansipPlayerId ?? this.suggestedHansipPlayerId,
       willCrownMove: willCrownMove ?? this.willCrownMove,
       nextCrownPlayerId: nextCrownPlayerId ?? this.nextCrownPlayerId,
+      stockStonesAfterSettlement:
+          stockStonesAfterSettlement ?? this.stockStonesAfterSettlement,
     );
   }
 
@@ -55,6 +61,8 @@ class SettlementPreviewModel extends Equatable {
         'suggestedHansipPlayerId': suggestedHansipPlayerId,
         'willCrownMove': willCrownMove,
         'nextCrownPlayerId': nextCrownPlayerId,
+        'stockStonesAfterSettlement':
+            stockStonesAfterSettlement.map((s) => s.toJson()).toList(),
       };
 
   factory SettlementPreviewModel.fromJson(Map<String, dynamic> json) =>
@@ -72,6 +80,12 @@ class SettlementPreviewModel extends Equatable {
         suggestedHansipPlayerId: json['suggestedHansipPlayerId'] as String?,
         willCrownMove: json['willCrownMove'] as bool,
         nextCrownPlayerId: json['nextCrownPlayerId'] as String?,
+        stockStonesAfterSettlement:
+            json['stockStonesAfterSettlement'] != null
+                ? (json['stockStonesAfterSettlement'] as List<dynamic>)
+                    .map((e) => StoneType.fromJson(e as String))
+                    .toList()
+                : const [],
       );
 
   @override
@@ -83,5 +97,6 @@ class SettlementPreviewModel extends Equatable {
         suggestedHansipPlayerId,
         willCrownMove,
         nextCrownPlayerId,
+        stockStonesAfterSettlement,
       ];
 }

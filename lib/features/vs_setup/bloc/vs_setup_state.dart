@@ -14,7 +14,7 @@ class VsSetupState extends Equatable {
   });
 
   factory VsSetupState.initial() => const VsSetupState(
-        playerName: 'Pemain',
+        playerName: 'Rizky',
         totalStones: AppConstants.defaultTotalStones,
       );
 
