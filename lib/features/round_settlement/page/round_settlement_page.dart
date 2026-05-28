@@ -91,7 +91,8 @@ class _RoundSettlementView extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Text(session.isVsMode ? '🤖' : '🏆', style: const TextStyle(fontSize: 22)),
+                  Text(session.isVsMode ? '🤖' : '🏆',
+                      style: const TextStyle(fontSize: 22)),
                   const SizedBox(width: AppTheme.spaceSM),
                   Expanded(
                     child: Text(
@@ -396,7 +397,8 @@ class _SettlementPreviewCard extends StatelessWidget {
     // Determine if the stone came from stock or from the winner
     // (stock is considered empty if stockStonesAfterSettlement has same length as original,
     //  but we check the winner — if winner == prevPlayer no bonus happens)
-    final bonusFromWinner = preview.previousPlayerBeforeWinnerId != preview.winnerPlayerId;
+    final bonusFromWinner =
+        preview.previousPlayerBeforeWinnerId != preview.winnerPlayerId;
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
@@ -435,7 +437,7 @@ class _SettlementPreviewCard extends StatelessWidget {
               _PreviewRow(
                 icon: Icons.shield_rounded,
                 color: AppTheme.teal,
-                label: 'Hansip baru',
+                label: 'Hansip',
                 value:
                     '${suggestedHansip.name} (${suggestedHansip.totalPoint} poin)',
               )

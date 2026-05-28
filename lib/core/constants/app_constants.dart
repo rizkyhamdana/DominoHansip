@@ -10,7 +10,8 @@ class AppConstants {
 
   // Microcopy
   static const String appName = 'Domino Hansip';
-  static const String appTagline = 'Main Domino Hansip Tradisional dengan AI & Simulasi.';
+  static const String appTagline =
+      'Main Domino Hansip Tradisional dengan AI & Simulasi.';
   static const String appSubtitle = 'Main vs Bot AI & Simulasi Mandiri';
 
   static const String noCrownHolder = 'Belum ada Kepala Desa';
@@ -28,7 +29,7 @@ class AppConstants {
       'berhasil menghabiskan batu. Status Kepala Desa akan diproses saat game selesai.';
   static const String crownMovedMessage = 'Jabatan Kepala Desa berpindah ke';
   static const String crownStayMessage = 'Jabatan Kepala Desa tetap di';
-  static const String newHansipMessage = 'Hansip baru:';
+  static const String newHansipMessage = 'Hansip:';
   static const String newRoundMessage = 'Game baru dimulai.';
   static const String hansipReadyMessage = 'Hansip, siap kocok domino!';
   static const String selectCauserTitle = 'Siapa yang bikin dia pass?';

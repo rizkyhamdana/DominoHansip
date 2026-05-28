@@ -352,9 +352,7 @@ class _RoundSettlementView extends StatelessWidget {
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
-                  context
-                      .read<SimTableBloc>()
-                      .add(ResolveHansipTie(player.id));
+                  context.read<SimTableBloc>().add(ResolveHansipTie(player.id));
                 },
               );
             }),
@@ -387,7 +385,8 @@ class _SettlementPreviewCard extends StatelessWidget {
             .firstWhere((p) => p.id == preview.suggestedHansipPlayerId)
         : null;
 
-    final bonusFromWinner = preview.previousPlayerBeforeWinnerId != preview.winnerPlayerId;
+    final bonusFromWinner =
+        preview.previousPlayerBeforeWinnerId != preview.winnerPlayerId;
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
@@ -426,7 +425,7 @@ class _SettlementPreviewCard extends StatelessWidget {
               _PreviewRow(
                 icon: Icons.shield_rounded,
                 color: AppTheme.teal,
-                label: 'Hansip baru',
+                label: 'Hansip',
                 value:
                     '${suggestedHansip.name} (${suggestedHansip.totalPoint} poin)',
               )

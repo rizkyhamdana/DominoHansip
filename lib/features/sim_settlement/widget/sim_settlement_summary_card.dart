@@ -114,7 +114,7 @@ class SimSettlementSummaryCard extends StatelessWidget {
                   _SummaryRow(
                     icon: Icons.shield_rounded,
                     color: AppTheme.teal,
-                    label: 'Hansip baru',
+                    label: 'Hansip',
                     value: hansip.name,
                     player: hansip,
                     badge: const HansipBadge(size: 16),
