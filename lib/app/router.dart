@@ -7,6 +7,8 @@ import 'package:crownpass/features/game_setup/page/game_setup_page.dart';
 import 'package:crownpass/features/vs_setup/page/vs_setup_page.dart';
 import 'package:crownpass/features/game_table/page/game_table_page.dart';
 import 'package:crownpass/features/round_settlement/page/round_settlement_page.dart';
+import 'package:crownpass/features/sim_table/page/sim_table_page.dart';
+import 'package:crownpass/features/sim_settlement/page/sim_settlement_page.dart';
 import 'package:crownpass/features/history/page/history_page.dart';
 import 'package:crownpass/features/statistics/page/statistics_page.dart';
 
@@ -18,6 +20,8 @@ class AppRouter {
   static const String vsSetup = '/vs-setup';
   static const String gameTable = '/game-table';
   static const String roundSettlement = '/round-settlement';
+  static const String simTable = '/sim-table';
+  static const String simSettlement = '/sim-settlement';
   static const String history = '/history';
   static const String statistics = '/statistics';
 
@@ -37,6 +41,10 @@ class AppRouter {
         return _slide(const GameTablePage(), settings);
       case roundSettlement:
         return _slide(const RoundSettlementPage(), settings);
+      case simTable:
+        return _slide(const SimTablePage(), settings);
+      case simSettlement:
+        return _slide(const SimSettlementPage(), settings);
       case history:
         return _slide(const HistoryPage(), settings);
       case statistics:

@@ -102,13 +102,13 @@ class _ModeSelectPageState extends State<ModeSelectPage>
 
                     const SizedBox(height: AppTheme.spaceMD),
 
-                    // Co-op Mode Card
+                    // Simulasi Mode Card
                     _ModeCard(
-                      id: 'btn_mode_coop',
-                      title: 'Co-op',
+                      id: 'btn_mode_sim',
+                      title: 'Simulasi',
                       subtitle:
-                          'Bermain bersama teman.\n3 sampai 6 pemain secara bergantian.',
-                      icon: Icons.groups_rounded,
+                          'Simulasikan jalannya permainan secara manual.\n3 sampai 6 pemain secara bergantian.',
+                      icon: Icons.settings_suggest_rounded,
                       badgeLabel: '3–6 Pemain',
                       accentColor: AppTheme.teal,
                       isPrimary: false,

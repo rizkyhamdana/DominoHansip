@@ -9,6 +9,9 @@ import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_bloc.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_event.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_bloc.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_event.dart' as sim_event;
+import 'package:crownpass/features/sim_table/bloc/sim_table_state.dart';
 import 'package:crownpass/features/home/widget/session_info_card.dart';
 
 class HomePage extends StatelessWidget {
@@ -18,117 +21,103 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocBuilder<GameTableBloc, GameTableState>(
-        builder: (context, state) {
-          final session = state.session;
-          final hasGame = session.hasActiveGame;
+        builder: (context, vsState) {
+          return BlocBuilder<SimTableBloc, SimTableState>(
+            builder: (context, simState) {
+              final vsSession = vsState.session;
+              final simSession = simState.session;
+              final hasVsGame = vsSession.hasActiveGame;
+              final hasSimGame = simSession.hasActiveGame;
+              final hasGame = hasVsGame || hasSimGame;
+              final activeSession = hasVsGame ? vsSession : simSession;
 
-          return Container(
-            color: AppTheme.background,
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spaceLG,
-                  vertical: AppTheme.spaceMD,
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: AppTheme.spaceXL),
-
-                    // Logo & Title
-                    _buildHeader(),
-
-                    const SizedBox(height: AppTheme.spaceXL),
-
-                    // Session info (shown if game exists)
-                    if (hasGame) ...[
-                      SessionInfoCard(
-                        crownPlayer: session.crownPlayer,
-                        hansipPlayer: session.hansipPlayer,
-                        totalRounds: session.roundHistory.length,
-                      ),
-                      const SizedBox(height: AppTheme.spaceLG),
-                    ],
-
-                    // Main menu buttons
-                    _MainMenuButton(
-                      id: 'btn_start_game',
-                      label: 'Mulai Permainan Baru',
-                      icon: Icons.play_arrow_rounded,
-                      isPrimary: true,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.modeSelect),
+              return Container(
+                color: AppTheme.background,
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceLG,
+                      vertical: AppTheme.spaceMD,
                     ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: AppTheme.spaceXL),
 
-                    if (hasGame) ...[
-                      _MainMenuButton(
-                        id: 'btn_continue_game',
-                        label: 'Lanjutkan Game',
-                        icon: Icons.sports_esports_rounded,
-                        isPrimary: false,
-                        onTap: () => _continueGame(context, state),
-                      ),
-                    ],
+                        // Logo & Title
+                        _buildHeader(),
 
-                    _MainMenuButton(
-                      id: 'btn_history',
-                      label: 'Riwayat Game',
-                      icon: Icons.history_rounded,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.history),
-                    ),
+                        const SizedBox(height: AppTheme.spaceXL),
 
-                    _MainMenuButton(
-                      id: 'btn_statistics',
-                      label: 'Statistik Pemain',
-                      icon: Icons.leaderboard_rounded,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRouter.statistics),
-                    ),
-
-                    if (hasGame) ...[
-                      const SizedBox(height: AppTheme.spaceSM),
-                      TextButton.icon(
-                        onPressed: () => _confirmReset(context),
-                        icon: const Icon(Icons.delete_outline_rounded,
-                            size: 18, color: AppTheme.error),
-                        label: Text(
-                          'Hapus Game Aktif',
-                          style: GoogleFonts.outfit(
-                            color: AppTheme.error,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                        // Session info (shown if game exists)
+                        if (hasGame) ...[
+                          SessionInfoCard(
+                            crownPlayer: activeSession.crownPlayer,
+                            hansipPlayer: activeSession.hansipPlayer,
+                            totalRounds: activeSession.roundHistory.length,
                           ),
+                          const SizedBox(height: AppTheme.spaceLG),
+                        ],
+
+                        // Main menu buttons
+                        _MainMenuButton(
+                          id: 'btn_start_game',
+                          label: 'Mulai Permainan Baru',
+                          icon: Icons.play_arrow_rounded,
+                          isPrimary: true,
+                          onTap: () =>
+                              Navigator.pushNamed(context, AppRouter.modeSelect),
                         ),
-                      ),
-                    ],
 
-                    const SizedBox(height: AppTheme.spaceXL),
+                        if (hasGame) ...[
+                          _MainMenuButton(
+                            id: 'btn_continue_game',
+                            label: 'Lanjutkan Game',
+                            icon: Icons.sports_esports_rounded,
+                            isPrimary: false,
+                            onTap: () => _continueGame(context, vsState, simState),
+                          ),
+                        ],
 
-                    // Bottom tagline sticker
-                    // Container(
-                    //   padding: const EdgeInsets.symmetric(
-                    //       horizontal: 16, vertical: 8),
-                    //   decoration: BoxDecoration(
-                    //     color: AppTheme.cardSurface,
-                    //     borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    //     border:
-                    //         Border.all(color: AppTheme.cardBorder, width: 2),
-                    //   ),
-                    //   child: Text(
-                    //     AppConstants.appTagline,
-                    //     style: GoogleFonts.inter(
-                    //       color: AppTheme.textSecondary,
-                    //       fontSize: 12,
-                    //       fontWeight: FontWeight.w700,
-                    //     ),
-                    //     textAlign: TextAlign.center,
-                    //   ),
-                    // ),
-                    const SizedBox(height: AppTheme.spaceMD),
-                  ],
+                        _MainMenuButton(
+                          id: 'btn_history',
+                          label: 'Riwayat Game',
+                          icon: Icons.history_rounded,
+                          onTap: () =>
+                              Navigator.pushNamed(context, AppRouter.history),
+                        ),
+
+                        _MainMenuButton(
+                          id: 'btn_statistics',
+                          label: 'Statistik Pemain',
+                          icon: Icons.leaderboard_rounded,
+                          onTap: () =>
+                              Navigator.pushNamed(context, AppRouter.statistics),
+                        ),
+
+                        if (hasGame) ...[
+                          const SizedBox(height: AppTheme.spaceSM),
+                          TextButton.icon(
+                            onPressed: () => _confirmReset(context),
+                            icon: const Icon(Icons.delete_outline_rounded,
+                                size: 18, color: AppTheme.error),
+                            label: Text(
+                              'Hapus Game Aktif',
+                              style: GoogleFonts.outfit(
+                                color: AppTheme.error,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: AppTheme.spaceMD),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
@@ -234,6 +223,7 @@ class HomePage extends StatelessWidget {
             ),
             onPressed: () {
               context.read<GameTableBloc>().add(const ResetGame());
+              context.read<SimTableBloc>().add(const sim_event.ResetGame());
               Navigator.pop(ctx);
             },
             child: Text(
@@ -246,12 +236,19 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void _continueGame(BuildContext context, GameTableState state) {
-    if (state.session.phase == GamePhase.roundFinished) {
-      context.read<GameTableBloc>().add(const StartNextRound());
+  void _continueGame(
+      BuildContext context, GameTableState vsState, SimTableState simState) {
+    if (vsState.session.hasActiveGame) {
+      if (vsState.session.phase == GamePhase.roundFinished) {
+        context.read<GameTableBloc>().add(const StartNextRound());
+      }
+      Navigator.pushNamed(context, AppRouter.gameTable);
+    } else if (simState.session.hasActiveGame) {
+      if (simState.session.phase == GamePhase.roundFinished) {
+        context.read<SimTableBloc>().add(const sim_event.StartNextRound());
+      }
+      Navigator.pushNamed(context, AppRouter.simTable);
     }
-
-    Navigator.pushNamed(context, AppRouter.gameTable);
   }
 }
 

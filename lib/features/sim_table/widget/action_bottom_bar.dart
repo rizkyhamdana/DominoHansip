@@ -5,8 +5,6 @@ import 'package:crownpass/app/theme.dart';
 import 'package:crownpass/data/models/game_session_model.dart';
 import 'package:crownpass/data/models/player_model.dart';
 
-import 'package:crownpass/core/utils/domino_engine.dart';
-
 class ActionBottomBar extends StatelessWidget {
   final GameSessionModel session;
   final String? selectedPlayerId;
@@ -25,21 +23,10 @@ class ActionBottomBar extends StatelessWidget {
     this.onMenu,
   });
 
-  bool get _canPass {
-    if (selectedPlayerId == null) return false;
-    
-    final isDrawOrPlay = session.phase == GamePhase.initialDraw || session.phase == GamePhase.playing;
-    if (!isDrawOrPlay) return false;
-
-    // If the selected player is the one whose turn it is, check if they have valid moves (glowing tiles)
-    if (session.currentTurnPlayerId == selectedPlayerId) {
-      final hand = session.playerHands[selectedPlayerId!] ?? const [];
-      final hasMoves = DominoEngine.hasValidMoves(hand, session.dominoChain);
-      if (hasMoves) return false; // Block pass!
-    }
-    
-    return true;
-  }
+  bool get _canPass =>
+      selectedPlayerId != null &&
+      (session.phase == GamePhase.initialDraw ||
+          session.phase == GamePhase.playing);
 
   bool get _canSettle {
     final hasNoStones = session.players.any((p) => p.totalStoneCount == 0);
@@ -80,6 +67,7 @@ class ActionBottomBar extends StatelessWidget {
           children: [
             // Pass button (primary if can pass)
             Expanded(
+              flex: 2,
               child: _BarButton(
                 id: 'btn_pass',
                 label: 'Pass',
@@ -94,30 +82,28 @@ class ActionBottomBar extends StatelessWidget {
             ),
             const SizedBox(width: AppTheme.spaceSM),
 
-            if (!session.isVsMode) ...[
-              // Settle button
-              Expanded(
-                flex: 2,
-                child: _BarButton(
-                  id: 'btn_settle',
-                  label: 'Selesai',
-                  icon: Icons.flag_rounded,
-                  color: _canSettle ? AppTheme.success : AppTheme.textMuted,
-                  onTap: _canSettle ? onSettle : null,
-                  tooltip: _settleTooltip,
-                ),
+            // Settle button
+            Expanded(
+              flex: 2,
+              child: _BarButton(
+                id: 'btn_settle',
+                label: 'Selesai',
+                icon: Icons.flag_rounded,
+                color: _canSettle ? AppTheme.success : AppTheme.textMuted,
+                onTap: _canSettle ? onSettle : null,
+                tooltip: _settleTooltip,
               ),
-              const SizedBox(width: AppTheme.spaceSM),
+            ),
+            const SizedBox(width: AppTheme.spaceSM),
 
-              // Undo
-              _IconBarButton(
-                id: 'btn_undo',
-                icon: Icons.undo_rounded,
-                color: _canUndo ? AppTheme.textSecondary : AppTheme.textMuted,
-                onTap: _canUndo ? onUndo : null,
-              ),
-              const SizedBox(width: AppTheme.spaceSM),
-            ],
+            // Undo
+            _IconBarButton(
+              id: 'btn_undo',
+              icon: Icons.undo_rounded,
+              color: _canUndo ? AppTheme.textSecondary : AppTheme.textMuted,
+              onTap: _canUndo ? onUndo : null,
+            ),
+            const SizedBox(width: AppTheme.spaceSM),
 
             // Menu
             _IconBarButton(

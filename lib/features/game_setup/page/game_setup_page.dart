@@ -10,8 +10,8 @@ import 'package:crownpass/features/game_setup/bloc/game_setup_bloc.dart';
 import 'package:crownpass/features/game_setup/bloc/game_setup_event.dart';
 import 'package:crownpass/features/game_setup/bloc/game_setup_state.dart';
 import 'package:crownpass/features/game_setup/widget/player_input_card.dart';
-import 'package:crownpass/features/game_table/bloc/game_table_bloc.dart';
-import 'package:crownpass/features/game_table/bloc/game_table_event.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_bloc.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_event.dart';
 
 class GameSetupPage extends StatelessWidget {
   const GameSetupPage({super.key});
@@ -35,7 +35,7 @@ class _GameSetupView extends StatelessWidget {
       listener: (context, setupState) {
         final setupBloc = context.read<GameSetupBloc>();
         final players = setupBloc.buildPlayerModels();
-        context.read<GameTableBloc>().add(InitializeGame(
+        context.read<SimTableBloc>().add(InitializeGame(
               players: players,
               totalStones: setupState.totalStones,
               isDragEnabled: setupState.isDragEnabled,
@@ -43,7 +43,7 @@ class _GameSetupView extends StatelessWidget {
             ));
         Navigator.pushNamedAndRemoveUntil(
           context,
-          AppRouter.gameTable,
+          AppRouter.simTable,
           (route) => route.settings.name == AppRouter.home,
         );
       },

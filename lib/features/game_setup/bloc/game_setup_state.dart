@@ -49,7 +49,7 @@ class GameSetupState extends Equatable {
   }
 
   static List<SetupPlayerDraft> _defaultPlayers(int count) {
-    final defaultNames = ['Andi', 'Budi', 'Cika', 'Doni', 'Eka', 'Fani'];
+    final defaultNames = ['Rizky', 'Budi', 'Cika', 'Doni', 'Eka', 'Fani'];
     return List.generate(
       count,
       (i) => SetupPlayerDraft(

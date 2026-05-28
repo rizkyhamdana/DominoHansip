@@ -11,33 +11,33 @@ import 'package:crownpass/core/widgets/player_avatar.dart';
 import 'package:crownpass/data/models/game_session_model.dart';
 import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/data/models/settlement_preview_model.dart';
-import 'package:crownpass/features/game_table/bloc/game_table_bloc.dart';
-import 'package:crownpass/features/game_table/bloc/game_table_event.dart';
-import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
-import 'package:crownpass/features/round_settlement/widget/settlement_summary_card.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_bloc.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_event.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_state.dart';
+import 'package:crownpass/features/sim_settlement/widget/sim_settlement_summary_card.dart';
 
-class RoundSettlementPage extends StatelessWidget {
-  const RoundSettlementPage({super.key});
+class SimSettlementPage extends StatelessWidget {
+  const SimSettlementPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<GameTableBloc, GameTableState>(
+    return BlocConsumer<SimTableBloc, SimTableState>(
       listenWhen: (prev, curr) => prev.session.phase != curr.session.phase,
       listener: (context, state) {
         if (state.session.phase == GamePhase.roundFinished) {
           // Dismiss any open dialog
           Navigator.of(context).popUntil(
-              (route) => route.settings.name == AppRouter.roundSettlement);
+              (route) => route.settings.name == AppRouter.simSettlement);
         }
       },
       builder: (context, state) {
         final session = state.session;
 
         return PopScope(
-          canPop: !session.isVsMode && session.phase != GamePhase.roundFinished,
+          canPop: session.phase != GamePhase.roundFinished,
           onPopInvokedWithResult: (didPop, result) {
             if (didPop) {
-              context.read<GameTableBloc>().add(const CancelRoundSettlement());
+              context.read<SimTableBloc>().add(const CancelRoundSettlement());
             } else {
               Navigator.pushNamedAndRemoveUntil(
                 context,
@@ -58,7 +58,7 @@ class RoundSettlementPage extends StatelessWidget {
 // ── Settlement selection view ─────────────────────────────────────────────────
 
 class _RoundSettlementView extends StatelessWidget {
-  final GameTableState state;
+  final SimTableState state;
   const _RoundSettlementView({required this.state});
 
   @override
@@ -69,12 +69,10 @@ class _RoundSettlementView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Selesaikan Game'),
-        leading: session.isVsMode
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                onPressed: () => Navigator.maybePop(context),
-              ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.maybePop(context),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppTheme.spaceMD),
@@ -91,13 +89,11 @@ class _RoundSettlementView extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Text(session.isVsMode ? '🤖' : '🏆', style: const TextStyle(fontSize: 22)),
+                  const Text('🏆', style: TextStyle(fontSize: 22)),
                   const SizedBox(width: AppTheme.spaceSM),
                   Expanded(
                     child: Text(
-                      session.isVsMode
-                          ? 'Hasil ronde telah dikalkulasi secara otomatis oleh sistem.'
-                          : 'Pilih pemain yang memenangkan game ini.',
+                      'Pilih pemain yang memenangkan game ini.',
                       style: GoogleFonts.outfit(
                         color: AppTheme.textPrimary,
                         fontSize: 14,
@@ -111,100 +107,98 @@ class _RoundSettlementView extends StatelessWidget {
 
             const SizedBox(height: AppTheme.spaceLG),
 
-            if (!session.isVsMode) ...[
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 4),
-                child: Text(
-                  'PILIH PEMENANG',
-                  style: GoogleFonts.outfit(
-                    color: AppTheme.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                  ),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 4),
+              child: Text(
+                'PILIH PEMENANG',
+                style: GoogleFonts.outfit(
+                  color: AppTheme.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: AppTheme.spaceSM),
+            ),
+            const SizedBox(height: AppTheme.spaceSM),
 
-              // Player selection list
-              ...session.players.map((player) {
-                final isSelected = preview?.winnerPlayerId == player.id;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context
-                        .read<GameTableBloc>()
-                        .add(SelectRoundWinner(player.id));
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    margin: const EdgeInsets.only(bottom: AppTheme.spaceMD),
-                    padding: const EdgeInsets.all(AppTheme.spaceMD),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.gold : AppTheme.cardSurface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      border: Border.all(
-                        color: AppTheme.cardBorder,
-                        width: 2.5,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              const BoxShadow(
-                                color: AppTheme.cardBorder,
-                                blurRadius: 0,
-                                offset: Offset(2.5, 2.5),
-                              )
-                            ]
-                          : null,
+            // Player selection list
+            ...session.players.map((player) {
+              final isSelected = preview?.winnerPlayerId == player.id;
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context
+                      .read<SimTableBloc>()
+                      .add(SelectRoundWinner(player.id));
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  margin: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+                  padding: const EdgeInsets.all(AppTheme.spaceMD),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppTheme.gold : AppTheme.cardSurface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    border: Border.all(
+                      color: AppTheme.cardBorder,
+                      width: 2.5,
                     ),
-                    child: Row(
-                      children: [
-                        PlayerAvatar(
-                          name: player.name,
-                          colorValue: player.avatarColorValue,
-                          radius: 20,
-                          isHighlighted: isSelected,
-                        ),
-                        const SizedBox(width: AppTheme.spaceMD),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                player.name,
-                                style: GoogleFonts.outfit(
-                                  color: AppTheme.textPrimary,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Text(
-                                '${player.totalStoneCount} batu · ${player.totalPoint} poin',
-                                style: GoogleFonts.inter(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (session.crownPlayerId == player.id) ...[
-                          const CrownBadge(size: 16),
-                          const SizedBox(width: 4),
-                        ],
-                        if (session.hansipPlayerId == player.id) ...[
-                          const HansipBadge(size: 16),
-                          const SizedBox(width: 4),
-                        ],
-                        if (isSelected)
-                          const Text('🥇', style: TextStyle(fontSize: 20)),
-                      ],
-                    ),
+                    boxShadow: isSelected
+                        ? [
+                            const BoxShadow(
+                              color: AppTheme.cardBorder,
+                              blurRadius: 0,
+                              offset: Offset(2.5, 2.5),
+                            )
+                          ]
+                        : null,
                   ),
-                );
-              }),
-            ],
+                  child: Row(
+                    children: [
+                      PlayerAvatar(
+                        name: player.name,
+                        colorValue: player.avatarColorValue,
+                        radius: 20,
+                        isHighlighted: isSelected,
+                      ),
+                      const SizedBox(width: AppTheme.spaceMD),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              player.name,
+                              style: GoogleFonts.outfit(
+                                color: AppTheme.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              '${player.totalStoneCount} batu · ${player.totalPoint} poin',
+                              style: GoogleFonts.inter(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (session.crownPlayerId == player.id) ...[
+                        const CrownBadge(size: 16),
+                        const SizedBox(width: 4),
+                      ],
+                      if (session.hansipPlayerId == player.id) ...[
+                        const HansipBadge(size: 16),
+                        const SizedBox(width: 4),
+                      ],
+                      if (isSelected)
+                        const Text('🥇', style: TextStyle(fontSize: 20)),
+                    ],
+                  ),
+                ),
+              );
+            }),
 
             // Preview section
             if (preview != null) ...[
@@ -297,13 +291,13 @@ class _RoundSettlementView extends StatelessWidget {
       _showHansipTieDialog(context, preview);
     } else {
       HapticFeedback.heavyImpact();
-      context.read<GameTableBloc>().add(const ConfirmSettlement());
+      context.read<SimTableBloc>().add(const ConfirmSettlement());
     }
   }
 
   void _showHansipTieDialog(
       BuildContext context, SettlementPreviewModel preview) {
-    final state = context.read<GameTableBloc>().state;
+    final state = context.read<SimTableBloc>().state;
     final session = state.session;
     final tiePlayers = preview.hansipTiePlayerIds
         .map((id) => session.players.firstWhere((p) => p.id == id))
@@ -359,7 +353,7 @@ class _RoundSettlementView extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(ctx);
                   context
-                      .read<GameTableBloc>()
+                      .read<SimTableBloc>()
                       .add(ResolveHansipTie(player.id));
                 },
               );
@@ -393,9 +387,6 @@ class _SettlementPreviewCard extends StatelessWidget {
             .firstWhere((p) => p.id == preview.suggestedHansipPlayerId)
         : null;
 
-    // Determine if the stone came from stock or from the winner
-    // (stock is considered empty if stockStonesAfterSettlement has same length as original,
-    //  but we check the winner — if winner == prevPlayer no bonus happens)
     final bonusFromWinner = preview.previousPlayerBeforeWinnerId != preview.winnerPlayerId;
 
     return Container(
@@ -551,7 +542,7 @@ class _PreviewRow extends StatelessWidget {
 // ── Round finished view ───────────────────────────────────────────────────────
 
 class _RoundFinishedView extends StatelessWidget {
-  final GameTableState state;
+  final SimTableState state;
   const _RoundFinishedView({required this.state});
 
   @override
@@ -563,7 +554,7 @@ class _RoundFinishedView extends StatelessWidget {
         child: Column(
           children: [
             // Summary card
-            SettlementSummaryCard(state: state),
+            SimSettlementSummaryCard(state: state),
 
             const SizedBox(height: AppTheme.spaceLG),
 
@@ -574,10 +565,10 @@ class _RoundFinishedView extends StatelessWidget {
                 key: const Key('btn_next_round'),
                 onTap: () {
                   HapticFeedback.heavyImpact();
-                  context.read<GameTableBloc>().add(const StartNextRound());
+                  context.read<SimTableBloc>().add(const StartNextRound());
                   Navigator.pushNamedAndRemoveUntil(
                     context,
-                    AppRouter.gameTable,
+                    AppRouter.simTable,
                     (route) => route.settings.name == AppRouter.home,
                   );
                 },

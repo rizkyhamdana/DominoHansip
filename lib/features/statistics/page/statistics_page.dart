@@ -8,6 +8,8 @@ import 'package:crownpass/core/widgets/player_avatar.dart';
 import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_bloc.dart';
 import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_bloc.dart';
+import 'package:crownpass/features/sim_table/bloc/sim_table_state.dart';
 
 class StatisticsPage extends StatelessWidget {
   const StatisticsPage({super.key});
@@ -15,26 +17,63 @@ class StatisticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistik')),
+      appBar: AppBar(
+        title: const Text('Statistik'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: BlocBuilder<GameTableBloc, GameTableState>(
-        builder: (context, state) {
-          final players = state.session.players;
-          final history = state.session.roundHistory;
+        builder: (context, vsState) {
+          return BlocBuilder<SimTableBloc, SimTableState>(
+            builder: (context, simState) {
+              final vsPlayers = vsState.session.players;
+              final simPlayers = simState.session.players;
+              final vsHistory = vsState.session.roundHistory;
+              final simHistory = simState.session.roundHistory;
 
-          if (players.isEmpty) {
-            return const EmptyStateView(
-              title: 'Belum ada data statistik',
-              subtitle: 'Mulai permainan untuk melihat statistik pemain.',
-              icon: Icons.leaderboard_rounded,
-            );
-          }
+              final totalRounds = vsHistory.length + simHistory.length;
 
-          return ListView(
-            padding: const EdgeInsets.all(AppTheme.spaceMD),
-            children: [
-              // Total rounds played
-              _RoundsCard(totalRounds: history.length),
-              const SizedBox(height: AppTheme.spaceMD),
+              final Map<String, PlayerModel> aggregated = {};
+              void addPlayer(PlayerModel p) {
+                final existing = aggregated[p.name];
+                if (existing != null) {
+                  aggregated[p.name] = existing.copyWith(
+                    winCount: existing.winCount + p.winCount,
+                    crownCount: existing.crownCount + p.crownCount,
+                    hansipCount: existing.hansipCount + p.hansipCount,
+                    passCount: existing.passCount + p.passCount,
+                    totalDistributedStones: existing.totalDistributedStones + p.totalDistributedStones,
+                    totalReceivedStones: existing.totalReceivedStones + p.totalReceivedStones,
+                  );
+                } else {
+                  aggregated[p.name] = p;
+                }
+              }
+
+              for (final p in vsPlayers) {
+                addPlayer(p);
+              }
+              for (final p in simPlayers) {
+                addPlayer(p);
+              }
+              final players = aggregated.values.toList();
+
+              if (players.isEmpty) {
+                return const EmptyStateView(
+                  title: 'Belum ada data statistik',
+                  subtitle: 'Mulai permainan untuk melihat statistik pemain.',
+                  icon: Icons.leaderboard_rounded,
+                );
+              }
+
+              return ListView(
+                padding: const EdgeInsets.all(AppTheme.spaceMD),
+                children: [
+                  // Total rounds played
+                  _RoundsCard(totalRounds: totalRounds),
+                  const SizedBox(height: AppTheme.spaceMD),
 
               // Leaderboards
               _StatSection(
@@ -99,8 +138,10 @@ class StatisticsPage extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
+      );
+    },
+  ),
+);
   }
 
   List<PlayerModel> _sortedBy(
