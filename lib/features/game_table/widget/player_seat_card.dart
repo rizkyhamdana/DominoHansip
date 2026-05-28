@@ -20,6 +20,7 @@ class PlayerSeatCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Function(StoneDropData)? onStoneDropped;
   final int? dominoTileCount;
+  final bool isThinking;
 
   const PlayerSeatCard({
     super.key,
@@ -33,6 +34,7 @@ class PlayerSeatCard extends StatelessWidget {
     this.onTap,
     this.onStoneDropped,
     this.dominoTileCount,
+    this.isThinking = false,
   });
 
   @override
@@ -136,12 +138,26 @@ class PlayerSeatCard extends StatelessWidget {
               ),
             ),
 
-          // Avatar
-          PlayerAvatar(
-            name: player.name,
-            colorValue: player.avatarColorValue,
-            radius: 20,
-            isHighlighted: isCurrentTurn || isSelected,
+          // Avatar with premium thinking spinner indicator
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              if (isThinking)
+                const SizedBox(
+                  width: 46,
+                  height: 46,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.gold),
+                  ),
+                ),
+              PlayerAvatar(
+                name: player.name,
+                colorValue: player.avatarColorValue,
+                radius: 20,
+                isHighlighted: isCurrentTurn || isSelected,
+              ),
+            ],
           ),
           const SizedBox(height: AppTheme.spaceXS),
 

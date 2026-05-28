@@ -185,9 +185,6 @@ class _GameTablePageState extends State<GameTablePage> with WidgetsBindingObserv
                       // App bar
                       _GameAppBar(session: session),
 
-                      // Bot thinking banner (VS mode)
-                      if (isBotTurn) _BotThinkingBanner(),
-
                       // Circular table area
                       Expanded(
                         child: _CircularTable(state: state),
@@ -607,6 +604,15 @@ class _CircularTable extends StatelessWidget {
             ? players.where((p) => p.id == distributorId).firstOrNull
             : null;
 
+        final isBotTurn = session.isVsMode &&
+            session.botPlayerIds.isNotEmpty &&
+            (session.botPlayerIds.contains(session.currentTurnPlayerId) ||
+                session.botPlayerIds
+                    .contains(session.currentDistributorPlayerId) ||
+                (state.isSelectingPassCauser &&
+                    session.botPlayerIds
+                        .contains(session.pendingPassedPlayerId)));
+
         final showTray = !session.isVsMode &&
             distributor != null &&
             distributor.totalStoneCount > 0;
@@ -785,6 +791,7 @@ class _CircularTable extends StatelessWidget {
                       isCurrentTurn: isCurrentTurn,
                       isDistributor: isDistributor,
                       isDragTarget: isDragTarget,
+                      isThinking: isBotTurn && isCurrentTurn,
                       onTap: () => _onPlayerTap(context, player, state),
                       dominoTileCount: session.isVsMode
                           ? (session.playerHands[player.id]?.length)
