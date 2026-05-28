@@ -172,8 +172,12 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
 
     // Check if game is blocked (everyone passes in a row, including the last tile player)
     if (newConsecutivePassCount == 4) {
-      // Find winner based on lowest pip total of remaining dominoes in hand
-      String winnerId = players.first.id;
+      // The triggerer of this block is the current player who just passed (event.playerId)
+      final triggererId = event.playerId;
+      final triggerer = GameRuleUtils.getPlayerById(players, triggererId);
+
+      // Find lowest pips among all players
+      String lowestId = players.first.id;
       int minPips = 999999;
       final List<String> breakdownLines = [];
 
@@ -182,34 +186,133 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         final pips = hand.fold<int>(0, (sum, tile) => sum + tile.totalPips);
         if (pips < minPips) {
           minPips = pips;
-          winnerId = p.id;
+          lowestId = p.id;
         }
-
-        final tileStrings =
-            hand.map((t) => '[${t.sideA}|${t.sideB}]').join(', ');
+        final tileStrings = hand.map((t) => '[${t.sideA}|${t.sideB}]').join(', ');
         breakdownLines.add('${p.name}: $pips pip ($tileStrings)');
       }
 
-      final winner = GameRuleUtils.getPlayerById(players, winnerId);
-      final String detailedBreakdown =
-          'Sisa kartu:\n${breakdownLines.join('\n')}';
+      final String detailedBreakdown = 'Sisa kartu:\n${breakdownLines.join('\n')}';
+      List<PlayerModel> updatedPlayersList = List.from(players);
+      List<StoneType> updatedStock = List.from(session.stockStones);
+      String ruleAppliedMessage = '';
+
+      // Rule: Jika triggerer (pemain ke-4 yang pass) BUKAN pemegang kartu terendah
+      if (triggererId != lowestId) {
+        final lowestPlayer = GameRuleUtils.getPlayerById(players, lowestId);
+        int stonesToGive = 4;
+        int stonesFromStock = 0;
+        int stonesFromLowestPlayer = 0;
+
+        // Ambil dari stock di meja dulu jika masih ada
+        if (updatedStock.isNotEmpty) {
+          if (updatedStock.length >= 4) {
+            stonesFromStock = 4;
+            updatedStock = updatedStock.sublist(4);
+            stonesToGive = 0;
+          } else {
+            stonesFromStock = updatedStock.length;
+            stonesToGive -= stonesFromStock;
+            updatedStock = [];
+          }
+        }
+
+        // Sisanya diambil langsung dari player terendah tadi
+        if (stonesToGive > 0) {
+          stonesFromLowestPlayer = stonesToGive;
+        }
+
+        // Terapkan penambahan batu ke triggerer
+        updatedPlayersList = updatedPlayersList.map((p) {
+          if (p.id == triggererId) {
+            // Triggerer menerima batu (prioritas small stone)
+            return p.copyWith(
+              smallStoneCount: p.smallStoneCount + stonesFromStock + stonesFromLowestPlayer,
+              totalReceivedStones: p.totalReceivedStones + stonesFromStock + stonesFromLowestPlayer,
+            );
+          }
+          if (p.id == lowestId) {
+            // Player terendah memberikan batu (mengurangi batu miliknya jika punya)
+            int newSmallCount = p.smallStoneCount - stonesFromLowestPlayer;
+            if (newSmallCount < 0) newSmallCount = 0;
+            return p.copyWith(
+              smallStoneCount: newSmallCount,
+              totalDistributedStones: p.totalDistributedStones + stonesFromLowestPlayer,
+            );
+          }
+          return p;
+        }).toList();
+
+        ruleAppliedMessage = '\n\nAturan Terbuka Applied: ${triggerer.name} (pembuat pass) bukan yang terendah! ${lowestPlayer.name} ($minPips pip) memberikan 4 batu ke ${triggerer.name} ($stonesFromStock dari meja, $stonesFromLowestPlayer dari ${lowestPlayer.name}).';
+      } else {
+        // KEBALEIKANNYA: Jika triggerer adalah pemegang kartu terendah (tetap dia yang menang)
+        // Dia harus membagikan masing-masing 1 batu kecil ke seluruh player lain!
+        final otherPlayers = players.where((p) => p.id != triggererId).toList();
+        final List<String> distributionDetails = [];
+        
+        for (final targetPlayer in otherPlayers) {
+          int stonesToGive = 1;
+          int stonesFromStock = 0;
+          int stonesFromTriggerer = 0;
+
+          // Ambil dari stock meja dulu jika ada
+          if (updatedStock.isNotEmpty) {
+            stonesFromStock = 1;
+            updatedStock.removeAt(0);
+            stonesToGive = 0;
+          }
+
+          // Sisanya diambil langsung dari triggerer
+          if (stonesToGive > 0) {
+            stonesFromTriggerer = 1;
+          }
+
+          distributionDetails.add('${targetPlayer.name} mendapat 1 batu ($stonesFromStock dari meja, $stonesFromTriggerer dari ${triggerer.name})');
+
+          // Update data player target dan triggerer
+          updatedPlayersList = updatedPlayersList.map((p) {
+            if (p.id == targetPlayer.id) {
+              return p.copyWith(
+                smallStoneCount: p.smallStoneCount + 1,
+                totalReceivedStones: p.totalReceivedStones + 1,
+              );
+            }
+            if (p.id == triggererId && stonesFromTriggerer > 0) {
+              int newSmallCount = p.smallStoneCount - 1;
+              if (newSmallCount < 0) newSmallCount = 0;
+              return p.copyWith(
+                smallStoneCount: newSmallCount,
+                totalDistributedStones: p.totalDistributedStones + 1,
+              );
+            }
+            return p;
+          }).toList();
+        }
+
+        ruleAppliedMessage = '\n\nAturan Terbuka Applied: Pembuat pass ${triggerer.name} juga pemegang kartu terendah ($minPips pip)! Konsekuensinya, ${triggerer.name} membagikan masing-masing 1 batu ke player lain:\n${distributionDetails.join('\n')}';
+      }
+
+      final winner = GameRuleUtils.getPlayerById(updatedPlayersList, lowestId);
 
       final preview = GameRuleUtils.createSettlementPreview(
-        players: players,
-        winnerPlayerId: winnerId,
+        players: updatedPlayersList,
+        winnerPlayerId: lowestId,
         currentCrownPlayerId: session.crownPlayerId,
         currentHansipPlayerId: session.hansipPlayerId,
-        stockStones: session.stockStones,
-        isStockEmpty: session.stockStones.isEmpty,
+        stockStones: updatedStock,
+        isStockEmpty: updatedStock.isEmpty,
+        isPureWin: false, // Menang lewat game buntu / semua pass BUKAN menang murni
       );
 
       emit(state.copyWith(
         session: session.copyWith(
+          players: updatedPlayersList,
+          stockStones: updatedStock,
           phase: GamePhase.roundSettlement,
           settlementPreview: preview,
           consecutivePassCount: newConsecutivePassCount,
           successMessage:
-              'Game Buntu! Semua pemain pass berturut-turut. ${winner.name} menang dengan sisa kartu terkecil ($minPips pip)!\n\n$detailedBreakdown',
+              'Game Buntu! Semua pemain pass berturut-turut. ${winner.name} menang dengan sisa kartu terkecil ($minPips pip)!$ruleAppliedMessage\n\n$detailedBreakdown',
           clearError: true,
         ),
         isSelectingPassCauser: false,
@@ -659,6 +762,11 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
   void _onSelectRoundWinner(
       SelectRoundWinner event, Emitter<GameTableState> emit) {
     final session = state.session;
+    final winner = GameRuleUtils.getPlayerById(session.players, event.winnerPlayerId);
+
+    // Kemenangan tidak murni (isPureWin = false) jika pemain menang dengan menghabiskan batu (hadZeroStoneThisRound == true)
+    final bool isPureWin = !winner.hadZeroStoneThisRound;
+
     final preview = GameRuleUtils.createSettlementPreview(
       players: session.players,
       winnerPlayerId: event.winnerPlayerId,
@@ -666,6 +774,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
       currentHansipPlayerId: session.hansipPlayerId,
       stockStones: session.stockStones,
       isStockEmpty: session.stockStones.isEmpty,
+      isPureWin: isPureWin,
     );
 
     emit(state.copyWith(
@@ -1071,6 +1180,7 @@ class GameTableBloc extends HydratedBloc<GameTableEvent, GameTableState> {
         currentHansipPlayerId: session.hansipPlayerId,
         stockStones: session.stockStones,
         isStockEmpty: session.stockStones.isEmpty,
+        isPureWin: true, // Menang secara normal karena kartunya benar-benar habis adalah MENANG MURNI!
       );
 
       emit(state.copyWith(

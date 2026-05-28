@@ -131,6 +131,7 @@ class GameRuleUtils {
     required String? currentHansipPlayerId,
     required List<StoneType> stockStones,
     bool isStockEmpty = true,
+    bool isPureWin = true,
   }) {
     // 1. Identify the previous player (seated just before the winner).
     final prevPlayer = getPreviousPlayer(players, winnerPlayerId);
@@ -175,7 +176,7 @@ class GameRuleUtils {
     final winnerAfterSettlement =
         getPlayerById(playersAfterSettlement, winnerPlayerId);
     final willCrownMove =
-        isStockEmpty && canWinnerReceiveCrownAfterSettlement(winnerAfterSettlement);
+        isPureWin && isStockEmpty && canWinnerReceiveCrownAfterSettlement(winnerAfterSettlement);
     final nextCrownPlayerId =
         willCrownMove ? winnerPlayerId : currentCrownPlayerId;
 
