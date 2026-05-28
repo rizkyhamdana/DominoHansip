@@ -13,6 +13,8 @@ class PlayerHandDeck extends StatelessWidget {
   final PlayerModel humanPlayer;
   final List<DominoTileModel> hand;
   final List<DominoTileModel> chain;
+  final bool enabled;
+  final bool Function()? canPlayNow;
   final Function(DominoTileModel, String) onPlay;
 
   const PlayerHandDeck({
@@ -20,14 +22,39 @@ class PlayerHandDeck extends StatelessWidget {
     required this.humanPlayer,
     required this.hand,
     required this.chain,
+    this.enabled = true,
+    this.canPlayNow,
     required this.onPlay,
   });
 
+  bool _canPlayNow() => enabled && (canPlayNow?.call() ?? true);
+
+  void _playIfAllowed(
+    BuildContext dialogContext,
+    DominoTileModel tile,
+    String side,
+  ) {
+    Navigator.pop(dialogContext);
+    if (!_canPlayNow()) return;
+    onPlay(tile, side);
+  }
+
   void _handleTileTap(BuildContext context, DominoTileModel tile) {
+    if (!_canPlayNow()) return;
+
     final canLeft = DominoEngine.canPlayLeft(tile, chain);
     final canRight = DominoEngine.canPlayRight(tile, chain);
 
     if (canLeft && canRight && chain.isNotEmpty) {
+      final leftEnd = DominoEngine.getLeftEnd(chain);
+      final rightEnd = DominoEngine.getRightEnd(chain);
+
+      if (leftEnd == rightEnd) {
+        if (!_canPlayNow()) return;
+        onPlay(tile, 'right');
+        return;
+      }
+
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -63,12 +90,10 @@ class PlayerHandDeck extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.bigStoneMaroon,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      onPlay(tile, 'left');
-                    },
+                    onPressed: () => _playIfAllowed(ctx, tile, 'left'),
                     icon: const Icon(Icons.arrow_back_rounded),
                     label: const Text('Kiri'),
                   ),
@@ -76,12 +101,10 @@ class PlayerHandDeck extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.teal,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      onPlay(tile, 'right');
-                    },
+                    onPressed: () => _playIfAllowed(ctx, tile, 'right'),
                     icon: const Icon(Icons.arrow_forward_rounded),
                     label: const Text('Kanan'),
                   ),
@@ -92,8 +115,10 @@ class PlayerHandDeck extends StatelessWidget {
         ),
       );
     } else if (canLeft) {
+      if (!_canPlayNow()) return;
       onPlay(tile, 'left');
     } else if (canRight) {
+      if (!_canPlayNow()) return;
       onPlay(tile, 'right');
     }
   }
@@ -179,7 +204,7 @@ class PlayerHandDeck extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(width: 10),
 
             // Horizontal Scrollable Deck List
@@ -203,9 +228,12 @@ class PlayerHandDeck extends StatelessWidget {
                         itemCount: hand.length,
                         itemBuilder: (context, index) {
                           final tile = hand[index];
-                          final leftPlayable = DominoEngine.canPlayLeft(tile, chain);
-                          final rightPlayable = DominoEngine.canPlayRight(tile, chain);
-                          final isPlayable = leftPlayable || rightPlayable;
+                          final leftPlayable =
+                              DominoEngine.canPlayLeft(tile, chain);
+                          final rightPlayable =
+                              DominoEngine.canPlayRight(tile, chain);
+                          final isPlayable =
+                              enabled && (leftPlayable || rightPlayable);
 
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
@@ -214,7 +242,9 @@ class PlayerHandDeck extends StatelessWidget {
                                 tile: tile,
                                 scale: 0.65,
                                 isPlayable: isPlayable,
-                                onTap: isPlayable ? () => _handleTileTap(context, tile) : null,
+                                onTap: isPlayable
+                                    ? () => _handleTileTap(context, tile)
+                                    : null,
                               ),
                             ),
                           );

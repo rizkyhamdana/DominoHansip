@@ -45,7 +45,8 @@ class _GameTablePageState extends State<GameTablePage> {
 
         // Check if resumed session is already in roundSettlement phase
         final state = context.read<GameTableBloc>().state;
-        if (state.session.phase == GamePhase.roundSettlement && !_hasPushedSettlement) {
+        if (state.session.phase == GamePhase.roundSettlement &&
+            !_hasPushedSettlement) {
           _hasPushedSettlement = true;
           Navigator.pushNamed(context, AppRouter.roundSettlement);
         }
@@ -92,7 +93,8 @@ class _GameTablePageState extends State<GameTablePage> {
         }
 
         // Navigate to settlement page
-        if (session.phase == GamePhase.roundSettlement && !_hasPushedSettlement) {
+        if (session.phase == GamePhase.roundSettlement &&
+            !_hasPushedSettlement) {
           _hasPushedSettlement = true;
           Navigator.pushNamed(context, AppRouter.roundSettlement);
         }
@@ -128,9 +130,11 @@ class _GameTablePageState extends State<GameTablePage> {
         final isBotTurn = session.isVsMode &&
             session.botPlayerIds.isNotEmpty &&
             (session.botPlayerIds.contains(session.currentTurnPlayerId) ||
-                session.botPlayerIds.contains(session.currentDistributorPlayerId) ||
+                session.botPlayerIds
+                    .contains(session.currentDistributorPlayerId) ||
                 (state.isSelectingPassCauser &&
-                    session.botPlayerIds.contains(session.pendingPassedPlayerId)));
+                    session.botPlayerIds
+                        .contains(session.pendingPassedPlayerId)));
 
         return PopScope(
           canPop: false,
@@ -168,21 +172,39 @@ class _GameTablePageState extends State<GameTablePage> {
 
                       if (session.isVsMode) ...[
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSM),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spaceSM),
                           child: DominoChainView(chain: session.dominoChain),
                         ),
                         Builder(
                           builder: (context) {
-                            final humanPlayer = session.players.firstWhere((p) => !session.isBot(p.id));
-                            final humanHand = session.playerHands[humanPlayer.id] ?? const [];
+                            final humanPlayer = session.players
+                                .firstWhere((p) => !session.isBot(p.id));
+                            final humanHand =
+                                session.playerHands[humanPlayer.id] ?? const [];
+                            bool canHumanPlayNow() {
+                              final latestSession =
+                                  context.read<GameTableBloc>().state.session;
+                              return latestSession.phase == GamePhase.playing &&
+                                  latestSession.currentTurnPlayerId ==
+                                      humanPlayer.id &&
+                                  !latestSession.isBot(humanPlayer.id);
+                            }
+
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+                              padding: const EdgeInsets.only(
+                                  bottom: AppTheme.spaceSM),
                               child: PlayerHandDeck(
                                 humanPlayer: humanPlayer,
                                 hand: humanHand,
                                 chain: session.dominoChain,
+                                enabled: !isBotTurn && canHumanPlayNow(),
+                                canPlayNow: canHumanPlayNow,
                                 onPlay: (tile, side) {
-                                  context.read<GameTableBloc>().add(PlayDominoTile(
+                                  if (!canHumanPlayNow()) return;
+                                  context
+                                      .read<GameTableBloc>()
+                                      .add(PlayDominoTile(
                                         playerId: humanPlayer.id,
                                         tile: tile,
                                         side: side,
@@ -237,7 +259,8 @@ class _GameTablePageState extends State<GameTablePage> {
     if (playerId == null) return;
 
     final hand = state.session.playerHands[playerId] ?? const [];
-    final hasMoves = DominoEngine.hasValidMoves(hand, state.session.dominoChain);
+    final hasMoves =
+        DominoEngine.hasValidMoves(hand, state.session.dominoChain);
     if (hasMoves) return; // Block manual pass if they have playable tiles!
 
     if (state.isHapticEnabled) {
@@ -537,13 +560,14 @@ class _CircularTable extends StatelessWidget {
           (size.height / 2) + (session.isVsMode ? 48.0 : 0.0),
         );
         final players = session.players;
-        final displayPlayers = session.isVsMode 
-            ? players.where((p) => session.isBot(p.id)).toList() 
+        final displayPlayers = session.isVsMode
+            ? players.where((p) => session.isBot(p.id)).toList()
             : players;
         final n = displayPlayers.length;
 
         // Radius: adjust so cards don't overlap or go off screen
-        final radius = math.min(size.width, size.height) * (session.isVsMode ? 0.28 : 0.36);
+        final radius = math.min(size.width, size.height) *
+            (session.isVsMode ? 0.28 : 0.36);
         const cardHalfW = 50.0;
         const cardHalfH = 70.0;
 
@@ -558,7 +582,9 @@ class _CircularTable extends StatelessWidget {
             ? players.where((p) => p.id == distributorId).firstOrNull
             : null;
 
-        final showTray = !session.isVsMode && distributor != null && distributor.totalStoneCount > 0;
+        final showTray = !session.isVsMode &&
+            distributor != null &&
+            distributor.totalStoneCount > 0;
 
         return Stack(
           children: [
@@ -592,29 +618,42 @@ class _CircularTable extends StatelessWidget {
 
             // Center element: Board felt / Stock Pile (if stock is present) / DistributionTray (Co-op Mode empty stock)
             Positioned(
-              left: center.dx - (showTray ? 70 : (state.session.stockCount > 0 ? 55 : 45)),
-              top: center.dy - (showTray ? 85 : (state.session.stockCount > 0 ? 55 : 45)) + (session.isVsMode && state.session.stockCount > 0 ? 110.0 : 0.0),
+              left: center.dx -
+                  (showTray ? 70 : (state.session.stockCount > 0 ? 55 : 45)),
+              top: center.dy -
+                  (showTray ? 85 : (state.session.stockCount > 0 ? 55 : 45)) +
+                  (session.isVsMode && state.session.stockCount > 0
+                      ? 110.0
+                      : 0.0),
               child: (state.session.stockCount > 0)
                   ? StockPileWidget(
                       stockCount: state.session.stockCount,
                       topStoneType: state.session.stockStones.firstOrNull,
                       onTap: () {
                         final playerId = state.session.currentTurnPlayerId;
-                        final isHumanTurn = playerId != null && !state.session.isBot(playerId);
+                        final isHumanTurn =
+                            playerId != null && !state.session.isBot(playerId);
                         if (isHumanTurn) {
-                          final hand = state.session.playerHands[playerId] ?? const [];
-                          final hasMoves = DominoEngine.hasValidMoves(hand, state.session.dominoChain);
-                          if (hasMoves) return; // Block pass if they have playable tiles!
+                          final hand =
+                              state.session.playerHands[playerId] ?? const [];
+                          final hasMoves = DominoEngine.hasValidMoves(
+                              hand, state.session.dominoChain);
+                          if (hasMoves) {
+                            return; // Block pass if they have playable tiles!
+                          }
 
                           if (state.isHapticEnabled) {
                             HapticFeedback.lightImpact();
                           }
-                          context.read<GameTableBloc>().add(PlayerPass(playerId));
+                          context
+                              .read<GameTableBloc>()
+                              .add(PlayerPass(playerId));
                         }
                       },
                     )
                   : (showTray
-                      ? _buildCenterDistributionTray(context, state, distributorId!)
+                      ? _buildCenterDistributionTray(
+                          context, state, distributorId!)
                       : Container(
                           width: 90,
                           height: 90,
@@ -622,7 +661,8 @@ class _CircularTable extends StatelessWidget {
                             color: AppTheme.tableSurface,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppTheme.cardSurface.withValues(alpha: 0.35),
+                              color:
+                                  AppTheme.cardSurface.withValues(alpha: 0.35),
                               width: 3.0,
                             ),
                             boxShadow: [
@@ -640,7 +680,8 @@ class _CircularTable extends StatelessWidget {
                                 Text(
                                   '🀰',
                                   style: GoogleFonts.outfit(
-                                    color: AppTheme.cardSurface.withValues(alpha: 0.4),
+                                    color: AppTheme.cardSurface
+                                        .withValues(alpha: 0.4),
                                     fontSize: 22,
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -649,7 +690,8 @@ class _CircularTable extends StatelessWidget {
                                 Text(
                                   'BOARD',
                                   style: GoogleFonts.outfit(
-                                    color: AppTheme.cardSurface.withValues(alpha: 0.4),
+                                    color: AppTheme.cardSurface
+                                        .withValues(alpha: 0.4),
                                     fontSize: 9,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: 1.2,
@@ -702,7 +744,9 @@ class _CircularTable extends StatelessWidget {
                       isDistributor: isDistributor,
                       isDragTarget: isDragTarget,
                       onTap: () => _onPlayerTap(context, player, state),
-                      dominoTileCount: session.isVsMode ? (session.playerHands[player.id]?.length) : null,
+                      dominoTileCount: session.isVsMode
+                          ? (session.playerHands[player.id]?.length)
+                          : null,
                       onStoneDropped: isDragTarget
                           ? (data) {
                               if (state.isHapticEnabled) {
