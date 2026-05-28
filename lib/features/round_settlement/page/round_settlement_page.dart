@@ -17,8 +17,34 @@ import 'package:crownpass/features/game_table/bloc/game_table_state.dart';
 import 'package:crownpass/features/round_settlement/widget/settlement_summary_card.dart';
 import 'package:crownpass/core/services/audio_service.dart';
 
-class RoundSettlementPage extends StatelessWidget {
+class RoundSettlementPage extends StatefulWidget {
   const RoundSettlementPage({super.key});
+
+  @override
+  State<RoundSettlementPage> createState() => _RoundSettlementPageState();
+}
+
+class _RoundSettlementPageState extends State<RoundSettlementPage> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      AudioService.instance.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      AudioService.instance.resume();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +67,7 @@ class RoundSettlementPage extends StatelessWidget {
               context.read<GameTableBloc>().add(const CancelRoundSettlement());
             } else {
               // Going back to home — pause music
-              AudioService.instance.pause();
+              AudioService.instance.stopAll();
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 AppRouter.home,
@@ -626,7 +652,7 @@ class _RoundFinishedView extends StatelessWidget {
                 onTap: () {
                   HapticFeedback.lightImpact();
                   // Pause music when returning to home
-                  AudioService.instance.pause();
+                  AudioService.instance.stopAll();
                   Navigator.pushNamedAndRemoveUntil(
                       context, AppRouter.home, (r) => false);
                 },

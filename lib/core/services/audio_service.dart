@@ -74,6 +74,12 @@ class AudioService {
     return _isSfxMuted;
   }
 
+  /// Stop both background music and SFX immediately.
+  Future<void> stopAll() async {
+    await _musicPlayer.stop();
+    await _sfxPlayer.stop();
+  }
+
   // ── Lifecycle ───────────────────────────────────────────────────────────────
 
   /// Release resources. Call when app is terminating.

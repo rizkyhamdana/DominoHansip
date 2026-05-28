@@ -9,7 +9,7 @@ import 'package:crownpass/data/models/player_model.dart';
 import 'package:crownpass/data/models/domino_tile_model.dart';
 import 'domino_tile_widget.dart';
 
-class PlayerHandDeck extends StatelessWidget {
+class PlayerHandDeck extends StatefulWidget {
   final PlayerModel humanPlayer;
   final List<DominoTileModel> hand;
   final List<DominoTileModel> chain;
@@ -27,7 +27,64 @@ class PlayerHandDeck extends StatelessWidget {
     required this.onPlay,
   });
 
-  bool _canPlayNow() => enabled && (canPlayNow?.call() ?? true);
+  @override
+  State<PlayerHandDeck> createState() => _PlayerHandDeckState();
+}
+
+class _PlayerHandDeckState extends State<PlayerHandDeck> {
+  /// How many cards are currently visible (for staggered deal animation).
+  int _visibleCount = 0;
+
+  /// The hand we're currently displaying/animating.
+  List<DominoTileModel> _trackedHand = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _dealCards(widget.hand, fromIndex: 0);
+  }
+
+  @override
+  void didUpdateWidget(PlayerHandDeck old) {
+    super.didUpdateWidget(old);
+
+    if (widget.hand.length > _trackedHand.length) {
+      // Hand grew — new cards were added (initial deal / redeal).
+      // Animate only the new cards.
+      final startIndex = _trackedHand.length;
+      _dealCards(widget.hand, fromIndex: startIndex);
+    } else if (widget.hand.length < _trackedHand.length) {
+      // Card was played — update immediately, no animation.
+      setState(() {
+        _trackedHand = widget.hand;
+        _visibleCount = widget.hand.length;
+      });
+    }
+    // Equal length (same hand, re-render for other reason) → nothing to do.
+  }
+
+  /// Schedules cards to appear one by one starting from [fromIndex].
+  void _dealCards(List<DominoTileModel> newHand, {required int fromIndex}) {
+    _trackedHand = newHand;
+    if (fromIndex >= newHand.length) {
+      // Nothing new to animate.
+      if (mounted) setState(() => _visibleCount = newHand.length);
+      return;
+    }
+
+    // Reveal cards already shown instantly.
+    if (mounted) setState(() => _visibleCount = fromIndex);
+
+    // Stagger each new card: 90ms apart feels like real dealing.
+    for (int i = fromIndex; i < newHand.length; i++) {
+      final delay = (i - fromIndex) * 90;
+      Future.delayed(Duration(milliseconds: delay), () {
+        if (mounted) setState(() => _visibleCount = i + 1);
+      });
+    }
+  }
+
+  bool _canPlayNow() => widget.enabled && (widget.canPlayNow?.call() ?? true);
 
   void _playIfAllowed(
     BuildContext dialogContext,
@@ -36,22 +93,22 @@ class PlayerHandDeck extends StatelessWidget {
   ) {
     Navigator.pop(dialogContext);
     if (!_canPlayNow()) return;
-    onPlay(tile, side);
+    widget.onPlay(tile, side);
   }
 
   void _handleTileTap(BuildContext context, DominoTileModel tile) {
     if (!_canPlayNow()) return;
 
-    final canLeft = DominoEngine.canPlayLeft(tile, chain);
-    final canRight = DominoEngine.canPlayRight(tile, chain);
+    final canLeft = DominoEngine.canPlayLeft(tile, widget.chain);
+    final canRight = DominoEngine.canPlayRight(tile, widget.chain);
 
-    if (canLeft && canRight && chain.isNotEmpty) {
-      final leftEnd = DominoEngine.getLeftEnd(chain);
-      final rightEnd = DominoEngine.getRightEnd(chain);
+    if (canLeft && canRight && widget.chain.isNotEmpty) {
+      final leftEnd = DominoEngine.getLeftEnd(widget.chain);
+      final rightEnd = DominoEngine.getRightEnd(widget.chain);
 
       if (leftEnd == rightEnd) {
         if (!_canPlayNow()) return;
-        onPlay(tile, 'right');
+        widget.onPlay(tile, 'right');
         return;
       }
 
@@ -116,15 +173,17 @@ class PlayerHandDeck extends StatelessWidget {
       );
     } else if (canLeft) {
       if (!_canPlayNow()) return;
-      onPlay(tile, 'left');
+      widget.onPlay(tile, 'left');
     } else if (canRight) {
       if (!_canPlayNow()) return;
-      onPlay(tile, 'right');
+      widget.onPlay(tile, 'right');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hand = widget.trackedHandForDisplay;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -132,7 +191,7 @@ class PlayerHandDeck extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: AppTheme.spaceMD, bottom: 6),
           child: Text(
-            'KARTU KAMU (${hand.length})',
+            'KARTU KAMU (${widget.hand.length})',
             style: GoogleFonts.outfit(
               color: AppTheme.textPrimary,
               fontSize: 11,
@@ -164,8 +223,8 @@ class PlayerHandDeck extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   PlayerAvatar(
-                    name: humanPlayer.name,
-                    colorValue: humanPlayer.avatarColorValue,
+                    name: widget.humanPlayer.name,
+                    colorValue: widget.humanPlayer.avatarColorValue,
                     radius: 16,
                   ),
                   const SizedBox(width: 6),
@@ -176,7 +235,7 @@ class PlayerHandDeck extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          humanPlayer.name,
+                          widget.humanPlayer.name,
                           style: GoogleFonts.outfit(
                             color: AppTheme.textPrimary,
                             fontSize: 11,
@@ -186,7 +245,7 @@ class PlayerHandDeck extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          '${humanPlayer.totalPoint} Poin',
+                          '${widget.humanPlayer.totalPoint} Poin',
                           style: GoogleFonts.inter(
                             color: AppTheme.textMuted,
                             fontSize: 9,
@@ -198,8 +257,8 @@ class PlayerHandDeck extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   _CardStoneStack(
-                    smallStoneCount: humanPlayer.smallStoneCount,
-                    hasBigStone: humanPlayer.hasBigStone,
+                    smallStoneCount: widget.humanPlayer.smallStoneCount,
+                    hasBigStone: widget.humanPlayer.hasBigStone,
                   ),
                 ],
               ),
@@ -224,27 +283,40 @@ class PlayerHandDeck extends StatelessWidget {
                       )
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(right: AppTheme.spaceMD),
+                        padding:
+                            const EdgeInsets.only(right: AppTheme.spaceMD),
                         itemCount: hand.length,
                         itemBuilder: (context, index) {
                           final tile = hand[index];
+                          final isVisible = index < _visibleCount;
                           final leftPlayable =
-                              DominoEngine.canPlayLeft(tile, chain);
+                              DominoEngine.canPlayLeft(tile, widget.chain);
                           final rightPlayable =
-                              DominoEngine.canPlayRight(tile, chain);
+                              DominoEngine.canPlayRight(tile, widget.chain);
                           final isPlayable =
-                              enabled && (leftPlayable || rightPlayable);
+                              widget.enabled && (leftPlayable || rightPlayable);
 
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: Center(
-                              child: DominoTileWidget(
-                                tile: tile,
-                                scale: 0.65,
-                                isPlayable: isPlayable,
-                                onTap: isPlayable
-                                    ? () => _handleTileTap(context, tile)
-                                    : null,
+                              child: AnimatedOpacity(
+                                opacity: isVisible ? 1.0 : 0.0,
+                                duration: const Duration(milliseconds: 200),
+                                child: AnimatedSlide(
+                                  offset: isVisible
+                                      ? Offset.zero
+                                      : const Offset(0, 0.4),
+                                  duration: const Duration(milliseconds: 220),
+                                  curve: Curves.easeOutCubic,
+                                  child: DominoTileWidget(
+                                    tile: tile,
+                                    scale: 0.65,
+                                    isPlayable: isPlayable,
+                                    onTap: isPlayable
+                                        ? () => _handleTileTap(context, tile)
+                                        : null,
+                                  ),
+                                ),
                               ),
                             ),
                           );
@@ -257,6 +329,11 @@ class PlayerHandDeck extends StatelessWidget {
       ],
     );
   }
+}
+
+// Extension to expose tracked hand safely
+extension on PlayerHandDeck {
+  List<DominoTileModel> get trackedHandForDisplay => hand;
 }
 
 class _CardStoneStack extends StatelessWidget {

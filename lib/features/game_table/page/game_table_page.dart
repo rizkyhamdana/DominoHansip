@@ -30,12 +30,13 @@ class GameTablePage extends StatefulWidget {
   State<GameTablePage> createState() => _GameTablePageState();
 }
 
-class _GameTablePageState extends State<GameTablePage> {
+class _GameTablePageState extends State<GameTablePage> with WidgetsBindingObserver {
   bool _hasPushedSettlement = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Hide system overlays for immersive gameplay experience
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
@@ -60,11 +61,23 @@ class _GameTablePageState extends State<GameTablePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     // Restore normal system UI bars
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     // NOTE: Music intentionally NOT paused here — continues across game screens.
     // Music is paused only when navigating back to home.
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      // Pause music when app is minimized or goes to background
+      AudioService.instance.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      // Resume music when app returns to foreground
+      AudioService.instance.resume();
+    }
   }
 
   @override
@@ -150,6 +163,8 @@ class _GameTablePageState extends State<GameTablePage> {
             if (didPop) return;
             final shouldExit = await _showExitConfirmationDialog(context);
             if (shouldExit && context.mounted) {
+              // Stop music and SFX immediately when leaving the table to home
+              AudioService.instance.stopAll();
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 AppRouter.home,
@@ -1152,8 +1167,8 @@ class _GameMenuState extends State<_GameMenu> {
             label: 'Kembali ke Beranda',
             onTap: () {
               Navigator.pop(context);
-              // Pause music when going back to home
-              AudioService.instance.pause();
+              // Stop music and SFX when going back to home
+              AudioService.instance.stopAll();
               Navigator.pushNamedAndRemoveUntil(
                   context, AppRouter.home, (r) => false);
             },
