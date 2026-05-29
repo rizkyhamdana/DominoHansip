@@ -2,11 +2,46 @@ import 'package:audioplayers/audioplayers.dart';
 
 /// Singleton service for background music and sound effects playback.
 class AudioService {
-  AudioService._internal();
+  AudioService._internal() {
+    _configureAudioContext();
+  }
   static final AudioService instance = AudioService._internal();
 
   final AudioPlayer _musicPlayer = AudioPlayer();
   final AudioPlayer _sfxPlayer = AudioPlayer();
+
+  void _configureAudioContext() {
+    // Konfigurasi Music Player: Meminta focus penuh untuk BGM
+    _musicPlayer.setAudioContext(
+      AudioContext(
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.gain,
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.media,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: const {},
+        ),
+      ),
+    );
+
+    // Konfigurasi SFX Player: Tidak meminta focus (AndroidAudioFocus.none)
+    // Ini menjamin suara efek tidak akan pernah menjeda atau memengaruhi volume musik latar
+    _sfxPlayer.setAudioContext(
+      AudioContext(
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.none,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.assistanceSonification,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: const {},
+        ),
+      ),
+    );
+  }
 
   bool _isMusicMuted = false;
   bool _isSfxMuted = false;
